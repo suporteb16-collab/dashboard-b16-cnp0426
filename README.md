@@ -2,7 +2,7 @@
 
 Dashboard de performance desenvolvido pela **Agência B16** para acompanhamento em tempo real do lançamento **Cromador Nível Pro** da Mundial Cromo.
 
-🔗 **Acesse o dashboard:** [https://henriquecardosos96.github.io/dashboard-b16/](https://henriquecardosos96.github.io/dashboard-b16-cnp0426/)
+🔗 **Acesse o dashboard:** [[https://henriquecardosos96.github.io/dashboard-b16/](https://henriquecardosos96.github.io/dashboard-b16-cnp0426/)](https://suporteb16-collab.github.io/dashboard-b16-cnp0426/)
 
 ---
 
