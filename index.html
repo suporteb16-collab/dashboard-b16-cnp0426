@@ -687,9 +687,33 @@ input[type=date]{background:transparent;border:none;color:#ccc;font-family:'DM S
     <div class="card" style="padding:20px;margin-bottom:28px"><canvas id="kvChartVendedores" height="120"></canvas></div>
 
     <!-- ── SECAO 7: ANALISE GERAL ──────────────────────────────────────── -->
-    <div class="section-label">Analise Geral</div>
+    <div class="section-label">Analise Geral — Produto Principal + Order Bumps</div>
+
+    <!-- Linha 0: Totais consolidados -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+      <div class="bn" style="position:relative">
+        <div class="bn-info">ⓘ<span class="bn-tooltip">Soma de vendas pagas do Cromador Pro 2.0 + Pintura Eletrostática na Prática 1.0 + Galvanizado Pro -1.0.</span></div>
+        <div class="bn-lbl">Vendas Totais (3 Produtos)</div>
+        <div class="bn-val" id="kvVendasTotal" style="font-size:44px">-</div>
+        <div class="bn-sub" id="kvVendasTotalSub">principal + order bumps</div>
+      </div>
+      <div class="bn" style="position:relative">
+        <div class="bn-info">ⓘ<span class="bn-tooltip">Faturamento bruto somando Cromador Pro 2.0 + order bumps (preço base de cada produto × vendas).</span></div>
+        <div class="bn-lbl">Faturamento Total (3 Produtos)</div>
+        <div class="bn-val" id="kvFatTotal" style="font-size:40px">-</div>
+        <div class="bn-sub" id="kvFatTotalSub">principal + order bumps</div>
+      </div>
+    </div>
+
+    <!-- Linha 1: Reembolsos, Aguardando, Recompra -->
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:14px">
-      <div class="bn" style="position:relative"><div class="bn-info">ⓘ<span class="bn-tooltip">Pedidos com status "refunded" cruzados pelo order_ref com os pedidos pagos.</span></div><div class="bn-lbl">Reembolsos</div><div class="bn-val" id="kvReemb" style="font-size:44px">-</div><div class="bn-sub" id="kvReembPct">- do total</div></div>
+      <div class="bn" style="position:relative">
+        <div class="bn-info">ⓘ<span class="bn-tooltip">Pedidos com status "refunded" cruzados pelo order_ref com os pedidos pagos.</span></div>
+        <div class="bn-lbl">Reembolsos</div>
+        <div class="bn-val" id="kvReemb" style="font-size:44px">-</div>
+        <div class="bn-sub" id="kvReembPct">- do total</div>
+        <div id="kvReembBreak" style="margin-top:10px;font-size:11px;color:var(--muted);line-height:1.9;border-top:1px solid var(--border);padding-top:8px"></div>
+      </div>
       <div class="bn" style="position:relative"><div class="bn-info">ⓘ<span class="bn-tooltip">Pedidos com status "waiting_payment" ou "pending" no período. Ainda não confirmados.</span></div><div class="bn-lbl">Aguardando Pagamento</div><div class="bn-val" id="kvAguard" style="font-size:44px">-</div><div class="bn-sub">transações pendentes</div></div>
       <div class="bn" style="position:relative"><div class="bn-info">ⓘ<span class="bn-tooltip">Clientes que compraram Cromador Pro 2.0 e pelo menos 1 outro produto (cross-sell). Identificado via e-mail.</span></div><div class="bn-lbl">Clientes com Recompra</div><div class="bn-val" id="kvRecompra" style="font-size:44px">-</div><div class="bn-sub" id="kvRecompraSub">cross-sell identificado por email</div>
         <button id="btnDownloadRecompra" onclick="downloadRecompraCSV()"
@@ -699,14 +723,30 @@ input[type=date]{background:transparent;border:none;color:#ccc;font-family:'DM S
           ⬇ Exportar CSV
         </button></div>
     </div>
-    <div class="grid-analise" style="align-items:stretch">
+
+    <!-- Linha 2: Método pagamento (todos produtos) + Faturamento por produto (rosca) -->
+    <div class="grid-analise" style="align-items:stretch;margin-bottom:14px">
       <div class="card" style="padding:20px">
-        <div class="card-title">Metodo de Pagamento</div>
+        <div class="card-title">Metodo de Pagamento — Todos os Produtos</div>
         <canvas id="kvPagDonut" height="160"></canvas>
         <div id="kvPagLegend" style="margin-top:12px"></div>
       </div>
-      <div class="card" style="padding:20px"><div class="card-title">Vendas por Dia da Semana</div><canvas id="kvChartSemDia" height="160"></canvas></div>
-      <div class="card" style="padding:20px"><div class="card-title">Vendas por Hora</div><canvas id="kvChartHora" height="160"></canvas></div>
+      <div class="card" style="padding:20px">
+        <div class="card-title">Faturamento por Produto</div>
+        <div style="display:flex;align-items:center;gap:20px">
+          <div style="position:relative;width:150px;height:150px;flex-shrink:0">
+            <canvas id="kvFatProdDonut" width="150" height="150"></canvas>
+          </div>
+          <div id="kvFatProdLegend" style="flex:1;font-size:12px"></div>
+        </div>
+      </div>
+      <div class="card" style="padding:20px"><div class="card-title">Vendas por Hora — Todos os Produtos</div><canvas id="kvChartHora" height="160"></canvas></div>
+    </div>
+
+    <!-- Linha 3: Dia da semana e por dia empilhado -->
+    <div style="display:grid;grid-template-columns:1fr 2fr;gap:14px;margin-bottom:14px">
+      <div class="card" style="padding:20px"><div class="card-title">Vendas por Dia da Semana — Todos os Produtos</div><canvas id="kvChartSemDia" height="200"></canvas></div>
+      <div class="card" style="padding:20px"><div class="card-title">Vendas por Dia — Todos os Produtos</div><canvas id="kvChartDiaProd" height="200"></canvas></div>
     </div>
 
     <!-- ── SECAO 9: ABANDONO DE CARRINHO ──────────────────────────────── -->
@@ -814,6 +854,8 @@ const ABANDONO_CSV_URL  = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID_P
   + '/gviz/tq?tqx=out:csv&sheet=' + encodeURIComponent('Abandonos');
 const KIWIFY_DATA_INI = '2026-05-11';
 const PRODUTO_EXATO   = 'Cromador Pro 2.0'; // filtro exato de produto
+const ORDER_BUMPS     = ['Pintura Eletrostática na Prática 1.0', 'Galvanizado Pro -1.0'];
+const TODOS_PRODUTOS  = [PRODUTO_EXATO].concat(ORDER_BUMPS);
 const INVEST_LEAGUELEAD = 11700; // investimento fixo LeagueLead — alterar por lançamento
 const TICKET       = 797; // Ticket fixo — Faturamento Bruto = Vendas × TICKET
 const CNP_TAG      = '[CNP]';
@@ -1005,6 +1047,10 @@ function processKiwify(rows, d1, d2) {
   var vendas=0, fat=0, reembolsos=0, fatReemb=0, aguardando=0;
   var paidRefs = {}, refundedRefs = {};
   var byDia={}, bySemDia={}, byHora={}, byProduto={};
+  // Order bumps — estruturas paralelas
+  var bumpVendas=0, bumpFat=0, bumpReembolsos={}, bumpFatProd={};  // bumpReembolsos: prod→count
+  var bumpByDia={}, bumpBySemDia={}, bumpByHora={}, bumpByPag={};
+  ORDER_BUMPS.forEach(function(p){ bumpReembolsos[p]=0; });
   var byUTMSource={}, byUTMTerm={}, byUTMContent={}, byUTMMedium={};
   var byVendedor={larissa:0, marcela:0, kamilly:0, ray:0};
   var byPagamento={}, emailsSet={}, telefonesSet={};
@@ -1037,9 +1083,14 @@ function processKiwify(rows, d1, d2) {
     var prod = (r['Product_product_name'] || '').trim();
     var ref  = (r['order_ref'] || '').trim();
     var data = (r['Data Criacao'] || '').trim().slice(0,10);
-    if ((st === 'refunded' || st === 'refundeded') && prod === PRODUTO_EXATO && ref && data >= DATA_INI && !refundedRefs[ref]) {
-      refundedRefs[ref] = true;
-      reembolsos++;
+    if ((st === 'refunded' || st === 'refundeded') && ref && data >= DATA_INI) {
+      if (prod === PRODUTO_EXATO && !refundedRefs[ref]) {
+        refundedRefs[ref] = true;
+        reembolsos++;
+      } else if (ORDER_BUMPS.indexOf(prod) >= 0 && !refundedRefs[ref+'_'+prod]) {
+        refundedRefs[ref+'_'+prod] = true;
+        bumpReembolsos[prod] = (bumpReembolsos[prod]||0) + 1;
+      }
     }
   });
 
@@ -1154,6 +1205,38 @@ function processKiwify(rows, d1, d2) {
       byPagamento[pagKey].vendas++; byPagamento[pagKey].fat += fat_v;
     }
 
+    // ── ORDER BUMPS ───────────────────────────────────────────────────────────
+    if ((status === 'paid' || status === 'paided') && ORDER_BUMPS.indexOf(prod) >= 0) {
+      bumpVendas++; bumpFat += fat_v;
+      bumpFatProd[prod] = (bumpFatProd[prod]||0) + fat_v;
+      // Por dia
+      if (!bumpByDia[data]) bumpByDia[data] = {};
+      bumpByDia[data][prod] = (bumpByDia[data][prod]||0) + 1;
+      // Por dia da semana
+      try {
+        var parts2 = data.split('-');
+        var dow2 = new Date(+parts2[0], +parts2[1]-1, +parts2[2]).getDay();
+        var dias2 = ['Dom','Seg','Ter','Qua','Qui','Sex','Sab'];
+        var d2k = dias2[dow2];
+        if (!bumpBySemDia[d2k]) bumpBySemDia[d2k] = {};
+        bumpBySemDia[d2k][prod] = (bumpBySemDia[d2k][prod]||0) + 1;
+      } catch(e2){}
+      // Por hora
+      if (hora !== '') {
+        var hb = parseInt(hora)||0;
+        if (!bumpByHora[hb]) bumpByHora[hb] = {};
+        bumpByHora[hb][prod] = (bumpByHora[hb][prod]||0) + 1;
+      }
+      // Método pagamento
+      var pagNormB;
+      if (pag === 'pix') pagNormB = 'Pix';
+      else if (['credit_card','mastercard','visa','elo','american-express','american_express'].indexOf(pag) >= 0) pagNormB = 'Cartão de Crédito';
+      else if (pag === 'boleto') pagNormB = 'Boleto';
+      else pagNormB = pag ? pag.charAt(0).toUpperCase()+pag.slice(1) : 'Outros';
+      if (!bumpByPag[pagNormB]) bumpByPag[pagNormB] = {vendas:0, fat:0};
+      bumpByPag[pagNormB].vendas++; bumpByPag[pagNormB].fat += fat_v;
+    }
+
     // reembolsos já contados no pré-passe acima (sem filtro de data)
     if (status === 'refunded' && ref && isProdutoExato && paidRefs[ref] !== undefined) {
       fatReemb += paidRefs[ref]; // faturamento do reembolso (só se paid existe)
@@ -1164,6 +1247,8 @@ function processKiwify(rows, d1, d2) {
   return {
     vendas:vendas, fat:fat, reembolsos:reembolsos, fatReemb:fatReemb, aguardando:aguardando, vendasPagas:vendasPagas, byPlataforma:byPlataforma, byOrigemCat:byOrigemCat, byPublicoCat:byPublicoCat,
     byDia:byDia, bySemDia:bySemDia, byHora:byHora, byProduto:byProduto,
+    bumpVendas:bumpVendas, bumpFat:bumpFat, bumpReembolsos:bumpReembolsos, bumpFatProd:bumpFatProd,
+    bumpByDia:bumpByDia, bumpBySemDia:bumpBySemDia, bumpByHora:bumpByHora, bumpByPag:bumpByPag,
     byUTMSource:byUTMSource, byUTMTerm:byUTMTerm, byUTMContent:byUTMContent, byUTMMedium:byUTMMedium,
     byVendedor:byVendedor, byPagamento:byPagamento,
     emailsSet:emailsSet, telefonesSet:telefonesSet
@@ -1864,8 +1949,27 @@ function renderVendas(kiwify, metas, wp, rmktSpendDireto, totalAdsDireto, abando
   mkChart('kvChartVendedores', {type:'bar', data:{labels:vends, datasets:[{data:vendVals, backgroundColor:['#d4a800','#16a34a','#3b82f6','#e1306c'], borderRadius:8}]}, options:{plugins:{legend:{display:false}}, scales:{x:{grid:{display:false}}, y:{grid:G, beginAtZero:true}}}});
 
   // ── ANALISE GERAL ──────────────────────────────────────────────────────────
+  // Totais consolidados (principal + bumps)
+  var totalVendasGeral = k.vendas + k.bumpVendas;
+  var totalFatGeral    = k.fat + k.bumpFat;
+  setEl('kvVendasTotal',    totalVendasGeral.toLocaleString('pt-BR'));
+  setEl('kvVendasTotalSub', k.vendas + ' principal + ' + k.bumpVendas + ' order bumps');
+  setEl('kvFatTotal',    fBRL(totalFatGeral));
+  setEl('kvFatTotalSub', fBRL(k.fat) + ' + ' + fBRL(k.bumpFat) + ' bumps');
+
+  // Reembolsos
   setEl('kvReemb',    k.reembolsos);
   setEl('kvReembPct', k.vendas > 0 ? (k.reembolsos/k.vendas*100).toFixed(1)+'% das vendas' : '-');
+  // Breakdown por produto
+  var breakEl = document.getElementById('kvReembBreak');
+  if (breakEl) {
+    var bLines = '<div style="display:flex;justify-content:space-between"><span>Cromador Pro 2.0</span><strong>' + k.reembolsos + '</strong></div>';
+    ORDER_BUMPS.forEach(function(p) {
+      var short = p.indexOf('Pintura') >= 0 ? 'Pintura Eletrostática' : 'Galvanizado Pro';
+      bLines += '<div style="display:flex;justify-content:space-between"><span>' + short + '</span><strong>' + (k.bumpReembolsos[p]||0) + '</strong></div>';
+    });
+    breakEl.innerHTML = bLines;
+  }
   setEl('kvAguard',   k.aguardando);
 
   // Recompra: contar emails com 2+ compras
@@ -1914,15 +2018,24 @@ function renderVendas(kiwify, metas, wp, rmktSpendDireto, totalAdsDireto, abando
   var btnDl = document.getElementById('btnDownloadRecompra');
   if (btnDl) btnDl.style.display = recompraCount > 0 ? 'block' : 'none';
 
-  // Método de pagamento
-  var pagEntries = Object.entries(k.byPagamento).sort(function(a,b){return b[1].vendas-a[1].vendas;});
+  // Método de pagamento — merge principal + bumps
+  var pagMerge = {};
+  function mergePag(src) {
+    Object.keys(src).forEach(function(k2) {
+      if (!pagMerge[k2]) pagMerge[k2] = {vendas:0, fat:0};
+      pagMerge[k2].vendas += src[k2].vendas;
+      pagMerge[k2].fat    += src[k2].fat;
+    });
+  }
+  mergePag(k.byPagamento);
+  mergePag(k.bumpByPag);
+  var pagEntries = Object.entries(pagMerge).sort(function(a,b){return b[1].vendas-a[1].vendas;});
   var pagLabels = pagEntries.map(function(e){return e[0].toUpperCase();});
   var pagVals   = pagEntries.map(function(e){return e[1].vendas;});
   var pagCols   = ['#d4a800','#25d366','#3b82f6','#e1306c','#9ca3af'];
   mkChart('kvPagDonut', {type:'doughnut', data:{labels:pagLabels, datasets:[{data:pagVals, backgroundColor:pagCols.slice(0,pagVals.length), borderColor:'#fff', borderWidth:3}]}, options:{cutout:'60%', plugins:{legend:{display:false}}}});
   var pagLegEl = document.getElementById('kvPagLegend');
   if (pagLegEl) {
-    var ptot2 = pagVals.reduce(function(s,v){return s+v;},0)||1;
     pagLegEl.innerHTML = pagEntries.map(function(e,i){
       return '<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;font-size:12px">'
            + '<div style="display:flex;align-items:center;gap:6px"><div style="width:10px;height:10px;border-radius:2px;background:'+(pagCols[i]||'#aaa')+'"></div>'+pagLabels[i]+'</div>'
@@ -1930,14 +2043,95 @@ function renderVendas(kiwify, metas, wp, rmktSpendDireto, totalAdsDireto, abando
     }).join('');
   }
 
-  // Dia da semana (ordem)
+  // Rosca: faturamento por produto
+  var prodFatLabels = ['Cromador Pro 2.0', 'Pintura Eletrostática', 'Galvanizado Pro'];
+  var prodFatVals   = [k.fat, k.bumpByPag ? 0 : 0, 0]; // calculado abaixo
+  var fatPintura = 0, fatGalv = 0;
+  ORDER_BUMPS.forEach(function(p) {
+    var bDia = k.bumpByDia;
+    // soma faturamento do bump por produto via bumpByPag não serve — usar bumpFat por produto
+  });
+  // Recalcular fat por produto bump via bumpByDia
+  var bumpFatByProd = {};
+  ORDER_BUMPS.forEach(function(p){ bumpFatByProd[p] = 0; });
+  // Usamos bumpVendas proporcional ao bumpFat (não temos fat por produto separado)
+  // Melhor: somar fat diretamente no bloco de bumps — já temos bumpByPag com fat
+  // Calcular fat por produto via nova estrutura bumpFatProd
+  var bumpFatProd = k.bumpFatProd || {};
+  prodFatVals = [
+    k.fat,
+    bumpFatProd['Pintura Eletrostática na Prática 1.0'] || 0,
+    bumpFatProd['Galvanizado Pro -1.0'] || 0
+  ];
+  var prodFatCols = ['#d4a800','#16a34a','#3b82f6'];
+  mkChart('kvFatProdDonut', {
+    type:'doughnut',
+    data:{labels:prodFatLabels, datasets:[{data:prodFatVals, backgroundColor:prodFatCols, borderColor:'#fff', borderWidth:3}]},
+    options:{cutout:'60%', plugins:{legend:{display:false}, tooltip:{callbacks:{label:function(ctx){return ' '+ctx.label+': '+fBRL(ctx.parsed);}}}}}
+  });
+  var fatProdLegEl = document.getElementById('kvFatProdLegend');
+  if (fatProdLegEl) {
+    var fatTot = prodFatVals.reduce(function(s,v){return s+v;},0)||1;
+    fatProdLegEl.innerHTML = prodFatLabels.map(function(l,i){
+      var pct = (prodFatVals[i]/fatTot*100).toFixed(1);
+      return '<div style="margin-bottom:10px">'
+           + '<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">'
+           + '<div style="width:10px;height:10px;border-radius:2px;background:'+prodFatCols[i]+'"></div>'
+           + '<span style="font-size:11px;color:var(--muted)">'+l+'</span></div>'
+           + '<div style="font-weight:700;font-size:14px">'+fBRL(prodFatVals[i])+'</div>'
+           + '<div style="font-size:11px;color:var(--muted)">'+pct+'% do total</div></div>';
+    }).join('');
+  }
+
+  // Dia da semana empilhado por produto (principal + bumps)
   var ordemSem = ['Seg','Ter','Qua','Qui','Sex','Sab','Dom'];
   var semVals  = ordemSem.map(function(d){return k.bySemDia[d]||0;});
-  mkChart('kvChartSemDia', {type:'bar', data:{labels:ordemSem, datasets:[{data:semVals, backgroundColor:'rgba(212,168,0,.7)', borderRadius:6}]}, options:{plugins:{legend:{display:false}}, scales:{x:{grid:{display:false}}, y:{grid:G, beginAtZero:true}}}});
+  var semPint  = ordemSem.map(function(d){return (k.bumpBySemDia[d]||{})['Pintura Eletrostática na Prática 1.0']||0;});
+  var semGalv  = ordemSem.map(function(d){return (k.bumpBySemDia[d]||{})['Galvanizado Pro -1.0']||0;});
+  mkChart('kvChartSemDia', {
+    type:'bar',
+    data:{labels:ordemSem, datasets:[
+      {label:'Cromador Pro 2.0',    data:semVals, backgroundColor:'rgba(212,168,0,.85)', borderRadius:4},
+      {label:'Pintura Eletrostática',data:semPint, backgroundColor:'rgba(22,163,74,.7)',  borderRadius:4},
+      {label:'Galvanizado Pro',      data:semGalv, backgroundColor:'rgba(59,130,246,.7)', borderRadius:4}
+    ]},
+    options:{plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:10}}}}, scales:{x:{grid:{display:false}, stacked:true}, y:{grid:G, beginAtZero:true, stacked:true}}}
+  });
 
-  // Por hora (0-23)
+  // Por hora empilhado por produto
   var horas = []; for(var h=0;h<24;h++) horas.push(h);
-  var horaVals = horas.map(function(h){return k.byHora[h]||0;});
+  var horaLbls  = horas.map(function(h){return h+'h';});
+  var horaValsP = horas.map(function(h){return k.byHora[h]||0;});
+  var horaPint  = horas.map(function(h){return (k.bumpByHora[h]||{})['Pintura Eletrostática na Prática 1.0']||0;});
+  var horaGalv  = horas.map(function(h){return (k.bumpByHora[h]||{})['Galvanizado Pro -1.0']||0;});
+  mkChart('kvChartHora', {
+    type:'bar',
+    data:{labels:horaLbls, datasets:[
+      {label:'Cromador Pro 2.0',    data:horaValsP, backgroundColor:'rgba(212,168,0,.85)', borderRadius:3},
+      {label:'Pintura Eletrostática',data:horaPint,  backgroundColor:'rgba(22,163,74,.7)',  borderRadius:3},
+      {label:'Galvanizado Pro',      data:horaGalv,  backgroundColor:'rgba(59,130,246,.7)', borderRadius:3}
+    ]},
+    options:{plugins:{legend:{display:false}}, scales:{x:{grid:{display:false}, stacked:true, ticks:{font:{size:9}}}, y:{grid:G, beginAtZero:true, stacked:true}}}
+  });
+
+  // Gráfico por dia empilhado por produto
+  var diasOrd  = Object.keys(k.byDia).concat(Object.keys(k.bumpByDia)).filter(function(v,i,a){return a.indexOf(v)===i;}).sort();
+  var diasLbls = diasOrd.map(function(d){var p=d.split('-'); return p[2]+'/'+p[1];});
+  var diaMain  = diasOrd.map(function(d){return (k.byDia[d]||{vendas:0}).vendas;});
+  var diaPint  = diasOrd.map(function(d){return (k.bumpByDia[d]||{})['Pintura Eletrostática na Prática 1.0']||0;});
+  var diaGalv  = diasOrd.map(function(d){return (k.bumpByDia[d]||{})['Galvanizado Pro -1.0']||0;});
+  mkChart('kvChartDiaProd', {
+    type:'bar',
+    data:{labels:diasLbls, datasets:[
+      {label:'Cromador Pro 2.0',    data:diaMain, backgroundColor:'rgba(212,168,0,.85)', borderRadius:4},
+      {label:'Pintura Eletrostática',data:diaPint, backgroundColor:'rgba(22,163,74,.7)',  borderRadius:4},
+      {label:'Galvanizado Pro',      data:diaGalv, backgroundColor:'rgba(59,130,246,.7)', borderRadius:4}
+    ]},
+    options:{plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:10}}}}, scales:{x:{grid:{display:false}, stacked:true, ticks:{maxRotation:45}}, y:{grid:G, beginAtZero:true, stacked:true}}}
+  });
+
+  // horaVals legado (não usado mais mas manter compatibilidade)
+  var horaVals = horaValsP;
   mkChart('kvChartHora', {type:'bar', data:{labels:horas.map(function(h){return h+'h';}), datasets:[{data:horaVals, backgroundColor:'rgba(212,168,0,.6)', borderRadius:4}]}, options:{plugins:{legend:{display:false}}, scales:{x:{grid:{display:false}, ticks:{font:{size:9}}}, y:{grid:G, beginAtZero:true}}}});
 
   // ── PREVISAO ───────────────────────────────────────────────────────────────
