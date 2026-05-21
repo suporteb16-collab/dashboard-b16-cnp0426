@@ -728,12 +728,12 @@ input[type=date]{background:transparent;border:none;color:#ccc;font-family:'DM S
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:stretch;margin-bottom:14px">
       <div class="card" style="padding:20px">
         <div class="card-title">Metodo de Pagamento — Todos os Produtos</div>
-        <canvas id="kvPagDonut" height="160"></canvas>
+        <div style="position:relative;height:220px"><canvas id="kvPagDonut"></canvas></div>
         <div id="kvPagLegend" style="margin-top:12px"></div>
       </div>
       <div class="card" style="padding:20px">
         <div class="card-title">Faturamento por Produto</div>
-        <canvas id="kvFatProdDonut" height="160"></canvas>
+        <div style="position:relative;height:220px"><canvas id="kvFatProdDonut"></canvas></div>
         <div id="kvFatProdLegend" style="margin-top:12px"></div>
       </div>
     </div>
@@ -2046,7 +2046,7 @@ function renderVendas(kiwify, metas, wp, rmktSpendDireto, totalAdsDireto, abando
   var pagLabels = pagEntries.map(function(e){return e[0].toUpperCase();});
   var pagVals   = pagEntries.map(function(e){return e[1].vendas;});
   var pagCols   = ['#d4a800','#25d366','#3b82f6','#e1306c','#9ca3af'];
-  mkChart('kvPagDonut', {type:'doughnut', data:{labels:pagLabels, datasets:[{data:pagVals, backgroundColor:pagCols.slice(0,pagVals.length), borderColor:'#fff', borderWidth:3}]}, options:{cutout:'60%', plugins:{legend:{display:false}}}});
+  mkChart('kvPagDonut', {type:'doughnut', data:{labels:pagLabels, datasets:[{data:pagVals, backgroundColor:pagCols.slice(0,pagVals.length), borderColor:'#fff', borderWidth:3}]}, options:{maintainAspectRatio:false, cutout:'60%', plugins:{legend:{display:false}}}});
   var pagLegEl = document.getElementById('kvPagLegend');
   if (pagLegEl) {
     pagLegEl.innerHTML = pagEntries.map(function(e,i){
@@ -2079,8 +2079,9 @@ function renderVendas(kiwify, metas, wp, rmktSpendDireto, totalAdsDireto, abando
   var prodFatCols = ['#d4a800','#16a34a','#3b82f6'];
   mkChart('kvFatProdDonut', {
     type:'doughnut',
+    /* maintainAspectRatio set below */
     data:{labels:prodFatLabels, datasets:[{data:prodFatVals, backgroundColor:prodFatCols, borderColor:'#fff', borderWidth:3}]},
-    options:{cutout:'60%', plugins:{legend:{display:false}, tooltip:{callbacks:{label:function(ctx){return ' '+ctx.label+': '+fBRL(ctx.parsed);}}}}}
+    options:{maintainAspectRatio:false, cutout:'60%', plugins:{legend:{display:false}, tooltip:{callbacks:{label:function(ctx){return ' '+ctx.label+': '+fBRL(ctx.parsed);}}}}}
   });
   var fatProdLegEl = document.getElementById('kvFatProdLegend');
   if (fatProdLegEl) {
