@@ -724,8 +724,8 @@ input[type=date]{background:transparent;border:none;color:#ccc;font-family:'DM S
         </button></div>
     </div>
 
-    <!-- Linha 2: Método pagamento (todos produtos) + Faturamento por produto (rosca) -->
-    <div class="grid-analise" style="align-items:stretch;margin-bottom:14px">
+    <!-- Fileira 1: Método Pagamento + Faturamento por Produto -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:stretch;margin-bottom:14px">
       <div class="card" style="padding:20px">
         <div class="card-title">Metodo de Pagamento — Todos os Produtos</div>
         <canvas id="kvPagDonut" height="160"></canvas>
@@ -740,13 +740,30 @@ input[type=date]{background:transparent;border:none;color:#ccc;font-family:'DM S
           <div id="kvFatProdLegend" style="flex:1;font-size:12px"></div>
         </div>
       </div>
-      <div class="card" style="padding:20px"><div class="card-title">Vendas por Hora — Todos os Produtos</div><canvas id="kvChartHora" height="160"></canvas></div>
     </div>
 
-    <!-- Linha 3: Dia da semana e por dia empilhado -->
-    <div style="display:grid;grid-template-columns:1fr 2fr;gap:14px;margin-bottom:14px">
-      <div class="card" style="padding:20px"><div class="card-title">Vendas por Dia da Semana — Todos os Produtos</div><canvas id="kvChartSemDia" height="200"></canvas></div>
-      <div class="card" style="padding:20px"><div class="card-title">Vendas por Dia — Todos os Produtos</div><canvas id="kvChartDiaProd" height="200"></canvas></div>
+    <!-- Fileira 2: Vendas por Hora — largura total -->
+    <div style="margin-bottom:14px">
+      <div class="card" style="padding:20px">
+        <div class="card-title">Vendas por Hora — Todos os Produtos</div>
+        <canvas id="kvChartHora" height="120"></canvas>
+      </div>
+    </div>
+
+    <!-- Fileira 3: Vendas por Dia da Semana — largura total -->
+    <div style="margin-bottom:14px">
+      <div class="card" style="padding:20px">
+        <div class="card-title">Vendas por Dia da Semana — Todos os Produtos</div>
+        <canvas id="kvChartSemDia" height="120"></canvas>
+      </div>
+    </div>
+
+    <!-- Fileira 4: Vendas por Dia — largura total -->
+    <div style="margin-bottom:14px">
+      <div class="card" style="padding:20px">
+        <div class="card-title">Vendas por Dia — Todos os Produtos</div>
+        <canvas id="kvChartDiaProd" height="120"></canvas>
+      </div>
     </div>
 
     <!-- ── SECAO 9: ABANDONO DE CARRINHO ──────────────────────────────── -->
