@@ -367,6 +367,7 @@ input[type=date]{background:transparent;border:none;color:#ccc;font-family:'DM S
     <button class="tab-btn" id="tab-pesquisa" onclick="switchTab('pesquisa')">📋 Pesquisa</button>
     <button class="tab-btn" id="tab-insights" onclick="switchTab('insights')">💡 Insights</button>
     <button class="tab-btn" id="tab-vendas" onclick="switchTab('vendas')">🛒 Vendas</button>
+    <button class="tab-btn" id="tab-debriefing" onclick="switchTab('debriefing')">&#128196; Debriefing</button>
   </div>
 
   <!-- OVERVIEW -->
@@ -844,7 +845,357 @@ input[type=date]{background:transparent;border:none;color:#ccc;font-family:'DM S
   </div>
 </div>
 
+  <!-- DEBRIEFING -->
+  <div id="pane-debriefing" style="display:none">
+
+    <div style="background:linear-gradient(135deg,#111 0%,#2a1a00 100%);border-radius:14px;padding:26px 32px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:10px;font-weight:700;letter-spacing:2px;color:var(--yellow);text-transform:uppercase;margin-bottom:5px">Cromador Nivel Pro 2.0</div>
+        <div style="font-size:24px;font-weight:800;color:#fff">Debriefing do Lancamento</div>
+        <div style="font-size:12px;color:rgba(255,255,255,.45);margin-top:3px">Captacao 08/04 a 12/05 &middot; Carrinho 11-21/05 &middot; Dados ate 28/05/2026</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:2px;text-transform:uppercase;letter-spacing:1px">ROAS Geral</div>
+        <div id="db-roas-hdr" style="font-size:40px;font-weight:900;color:var(--yellow)">-</div>
+      </div>
+    </div>
+
+    <div class="section-label">Resultados Gerais</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px">
+      <div class="bn"><div class="bn-lbl">Faturamento Total</div><div class="bn-val" id="db-fat-total">-</div><div class="bn-sub" id="db-fat-sub">-</div></div>
+      <div class="bn"><div class="bn-lbl">Vendas Totais</div><div class="bn-val" id="db-vend-total">-</div><div class="bn-sub" id="db-vend-sub">-</div></div>
+      <div class="bn"><div class="bn-lbl">Invest. Total c/ Imposto</div><div class="bn-val" id="db-inv-ci">-</div><div class="bn-sub">Meta + Imposto + League</div></div>
+      <div class="bn"><div class="bn-lbl">ROAS Geral</div><div class="bn-val" id="db-roas">-</div><div class="bn-sub" id="db-roas-sub">-</div></div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px">
+      <div class="bn"><div class="bn-lbl">Invest. Meta (s/ imposto)</div><div class="bn-val">R$&nbsp;63.657,96</div><div class="bn-sub">gasto direto em ads</div></div>
+      <div class="bn"><div class="bn-lbl">Imposto Meta Ads</div><div class="bn-val" style="color:#ef4444">R$&nbsp;7.829,65</div><div class="bn-sub">12,30% sobre gasto</div></div>
+      <div class="bn"><div class="bn-lbl">League Leads</div><div class="bn-val">R$&nbsp;11.700,00</div><div class="bn-sub">investimento fixo</div></div>
+      <div class="bn"><div class="bn-lbl">Invest. Total s/ Imposto</div><div class="bn-val">R$&nbsp;75.357,96</div><div class="bn-sub">Meta + League Leads</div></div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px">
+      <div class="bn"><div class="bn-lbl">Leads Totais</div><div class="bn-val">28.381</div><div class="bn-sub">LP + Forms ate 28/05</div></div>
+      <div class="bn"><div class="bn-lbl">Leads LP</div><div class="bn-val">15.685</div><div class="bn-sub">landing page</div></div>
+      <div class="bn"><div class="bn-lbl">Leads Forms Meta</div><div class="bn-val">12.696</div><div class="bn-sub">formulario instantaneo</div></div>
+      <div class="bn"><div class="bn-lbl">Leads Compradores</div><div class="bn-val">532</div><div class="bn-sub">1,87% da base total</div></div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px">
+      <div class="bn"><div class="bn-lbl">CPL</div><div class="bn-val" id="db-cpl">-</div><div class="bn-sub">invest. Meta / leads LP</div></div>
+      <div class="bn"><div class="bn-lbl">CAC Geral</div><div class="bn-val" id="db-cac">-</div><div class="bn-sub">invest. total / compradores</div></div>
+      <div class="bn"><div class="bn-lbl">CAC RMKT</div><div class="bn-val">R$&nbsp;58,01</div><div class="bn-sub">custo por comprador RMKT</div></div>
+      <div class="bn"><div class="bn-lbl">ROAS RMKT</div><div class="bn-val" style="color:#16a34a">139,31</div><div class="bn-sub">retorno campanha remarketing</div></div>
+    </div>
+
+    <div class="section-label">Funil de Conversao</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px;align-items:start">
+      <div class="card" style="padding:28px 20px">
+        <div id="db-funil" style="display:flex;flex-direction:column;align-items:center;gap:5px"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div class="section-label" style="margin:0 0 4px">Vendas por Produto</div>
+        <div class="bn"><div class="bn-lbl">Cromador Pro 2.0</div><div class="bn-val" id="db-v-crom">-</div><div class="bn-sub" id="db-f-crom">-</div></div>
+        <div class="bn"><div class="bn-lbl">Pintura Eletrostatica 1.0</div><div class="bn-val" id="db-v-pint">-</div><div class="bn-sub" id="db-f-pint">-</div></div>
+        <div class="bn"><div class="bn-lbl">Galvanizado Pro 1.0</div><div class="bn-val" id="db-v-galv">-</div><div class="bn-sub" id="db-f-galv">-</div></div>
+        <div class="bn"><div class="bn-lbl">Reembolsos</div><div class="bn-val" style="color:#ef4444" id="db-reemb">-</div><div class="bn-sub" id="db-reemb-sub">-</div></div>
+      </div>
+    </div>
+
+    <div class="section-label">Leads x Compradores por Dia &mdash; Captacao (08/04 a 12/05)</div>
+    <div class="card" style="padding:18px;margin-bottom:20px"><canvas id="db-g-leads" height="150"></canvas></div>
+
+    <div class="section-label">Vendas e Faturamento por Dia</div>
+    <div class="card" style="padding:18px;margin-bottom:20px"><canvas id="db-g-vendas" height="140"></canvas></div>
+
+    <div class="section-label">Investimento por Dia &mdash; Meta Ads</div>
+    <div class="card" style="padding:18px;margin-bottom:24px"><canvas id="db-g-gasto" height="120"></canvas></div>
+
+    <div class="section-label">Analise de Vendas por Origem</div>
+    <div style="display:flex;gap:10px;margin-bottom:12px;align-items:center">
+      <span style="font-size:12px;color:var(--muted)">Dimensao:</span>
+      <select id="db-dim" onchange="renderDbDim()" style="font-size:12px;padding:6px 12px;border-radius:7px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer">
+        <option value="utm_source">Plataforma (utm_source)</option>
+        <option value="utm_medium">Publico (utm_medium)</option>
+        <option value="utm_content">Criativo (utm_content)</option>
+        <option value="utm_campaign">Campanha (utm_campaign)</option>
+      </select>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 2fr;gap:16px;margin-bottom:12px">
+      <div class="card" style="padding:18px">
+        <div class="card-title" id="db-pie-title">Vendas por Plataforma</div>
+        <canvas id="db-g-pie" height="200"></canvas>
+        <div id="db-pie-leg" style="margin-top:8px;font-size:11px"></div>
+      </div>
+      <div class="card" style="padding:18px">
+        <div class="card-title" id="db-bar-title">Faturamento por Plataforma</div>
+        <canvas id="db-g-bar" height="200"></canvas>
+      </div>
+    </div>
+    <div class="card" style="padding:18px;margin-bottom:24px;overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead id="db-tbl-head"></thead>
+        <tbody id="db-tbl-body"></tbody>
+      </table>
+    </div>
+
+    <div class="section-label">Analise de Criativos &mdash; Meta Ads</div>
+    <div class="card" style="padding:18px;margin-bottom:24px;overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr style="border-bottom:2px solid var(--border)">
+            <th style="padding:10px 8px;color:var(--muted);font-weight:600;text-align:left">CRIATIVO</th>
+            <th style="padding:10px 8px;color:var(--muted);font-weight:600;text-align:right">INVEST.</th>
+            <th style="padding:10px 8px;color:var(--muted);font-weight:600;text-align:right">LEADS</th>
+            <th style="padding:10px 8px;color:var(--muted);font-weight:600;text-align:right">CPL</th>
+            <th style="padding:10px 8px;color:var(--muted);font-weight:600;text-align:right">IMPRESSOES</th>
+          </tr>
+        </thead>
+        <tbody id="db-cri-body"></tbody>
+      </table>
+    </div>
+
+  </div>
+  <!-- /DEBRIEFING -->
+
 <script>
+
+// === DEBRIEFING ===
+var DB_LDIAS=["08/04", "09/04", "10/04", "11/04", "12/04", "13/04", "14/04", "15/04", "16/04", "17/04", "18/04", "19/04", "20/04", "21/04", "22/04", "23/04", "24/04", "25/04", "26/04", "27/04", "28/04", "29/04", "30/04", "01/05", "02/05", "03/05", "04/05", "05/05", "06/05", "07/05", "08/05", "09/05", "10/05", "11/05", "12/05"];
+var DB_LVALS=[126, 143, 287, 417, 634, 669, 540, 609, 669, 688, 635, 964, 867, 304, 796, 1224, 1246, 489, 737, 1088, 1462, 1486, 1474, 1450, 1316, 1704, 453, 1324, 427, 400, 744, 755, 661, 307, 8];
+var DB_CVALS=[7, 7, 7, 11, 9, 21, 10, 13, 13, 11, 10, 9, 17, 7, 11, 13, 21, 10, 6, 15, 17, 17, 21, 25, 20, 28, 14, 24, 8, 14, 26, 30, 28, 25, 15];
+var DB_CRIATIVOS=[{"name": "007 - VID - Fala chefia", "thumb": "https://scontent.xx.fbcdn.net/v/t15.5256-10/663361433_1262742842666426_7715124116633011055_n.jpg?_nc_cat=104&ccb=1-7&_nc_ohc=HVC5sc0q3PwQ7kNvwEfDVOP&_nc_oc=AdpKzcoihWWWa2Erbo2gcd19lFczo_OHGvm6NmNG_HuJhPqznJnYKXuWWcNORy97FdE&_nc_zt=23&_nc_ht=scontent.xx&edm=AOgd6ZUEAAAA&_nc_gid=d2ccsMWZPhiRsCdY5Sc4xw&_nc_tpa=Q5bMBQGkZ7B8AWorC0c5OHFsjMyPntM1znjEih4DTyBQ0P76TN5IO7xgPXwswj7ue6ib8LiGb7OtMV6f&stp=c0.5000x0.5000f_dst-emg0_q75_tt6&ur=a86139&_nc_sid=58080a&oh=00_Af7Fxh_SOsm7BwxM1gO34_rxrrzBUDyhCw7Vuf_ce4b1wA&oe=6A1E64F2", "invest": 5177.55, "leads": 4738, "impressoes": 844887}, {"name": "006 - VID - Ja conhece o processo de cromo", "thumb": "https://scontent.xx.fbcdn.net/v/t15.5256-10/666685895_987019667157830_8225322797515108174_n.jpg?_nc_cat=109&ccb=1-7&_nc_ohc=UtTg0t9XvnkQ7kNvwEGqSkv&_nc_oc=AdqgPlYwUP17ZhTe0ajuVrhCmPB4__ruLbYH-41irFD_pr3WuQzm2PM7rtA51naofFA&_nc_zt=23&_nc_ht=scontent.xx&edm=AOgd6ZUEAAAA&_nc_gid=d2ccsMWZPhiRsCdY5Sc4xw&_nc_tpa=Q5bMBQENlM-1jCUoTNhDhxk_Ik62PyJc0nnmLj5dP7YLoBJ1Oi-mR9GCITyODoDf7C6RIT0HHw-PGAcX&stp=c0.5000x0.5000f_dst-emg0_q75_tt6&ur=a86139&_nc_sid=58080a&oh=00_Af64O6eSTaqT8s4YzGbaaN0v3Yc01ub-XJ2OXriz029TLw&oe=6A1E6A06", "invest": 4064.79, "leads": 4387, "impressoes": 710258}, {"name": "009 - VID - Entrou no removedor de tinta", "thumb": "https://scontent.xx.fbcdn.net/v/t15.5256-10/668677897_1711617493552023_2878519439763888118_n.jpg?_nc_cat=110&ccb=1-7&_nc_ohc=wUnHegaQGXIQ7kNvwHEH_PT&_nc_oc=Adr6LaHw0RIv0a8R0WL0HCcI793QAjQinubxer6ihPxYpyRbuKLWLAC7JjF7R6EuUUU&_nc_zt=23&_nc_ht=scontent.xx&edm=AOgd6ZUEAAAA&_nc_gid=d2ccsMWZPhiRsCdY5Sc4xw&_nc_tpa=Q5bMBQF7WyPRNDlvA_hjyomPT19CAQIRrU4_jPpB3EFJOI_hLOJhgtvwJjOVLIjKl7N_r4txlHKmYI3s&stp=c0.5000x0.5000f_dst-emg0_q75_tt6&ur=a86139&_nc_sid=58080a&oh=00_Af72SvfoggYLW0a4O2xjD_ofqJmrY6zYV1URuLPBzaRwgg&oe=6A1E6CF6", "invest": 3834.05, "leads": 3513, "impressoes": 521981}, {"name": "004 - VID - Dia vinte e cinco V2", "thumb": "https://scontent.xx.fbcdn.net/v/t15.5256-10/702450389_2158035688328790_7450952346883134552_n.jpg?_nc_cat=102&ccb=1-7&_nc_ohc=G1Req5T-HoQQ7kNvwHnSYPp&_nc_oc=Adr2Kw392baeg0FICvFQp_1JJL4ux5nceKLh5YvSZJauEevClw-rCLqayXjLED1ByAw&_nc_zt=23&_nc_ht=scontent.xx&edm=AOgd6ZUEAAAA&_nc_gid=d2ccsMWZPhiRsCdY5Sc4xw&_nc_tpa=Q5bMBQFAui7RoTJTqxm_JOoZgbVKeG3PN67H9CRLHjSbmkFKbgqMqtks0XzWPwul5kOO4u_Fnp8My0ex&stp=c0.5000x0.5000f_dst-emg0_q75_tt6&ur=a86139&_nc_sid=58080a&oh=00_Af4wbT1BVzoTg2IT4LYUlxRqWbyKDP_NTh_DtscxRgQBdA&oe=6A1E601C", "invest": 3770.07, "leads": 1770, "impressoes": 495040}, {"name": "026 - VID - Fala galera", "thumb": "https://scontent.xx.fbcdn.net/v/t15.5256-10/673168869_900633473019243_7249375215869632325_n.jpg?_nc_cat=111&ccb=1-7&_nc_ohc=RfASiiTylq0Q7kNvwGZsyKH&_nc_oc=Adq46pNrEaMJDJjwYo50V_Uul0dBqnH2JESmUTep9OegjpoyEBNFSeEp1oW0rQ9jTOs&_nc_zt=23&_nc_ht=scontent.xx&edm=AOgd6ZUEAAAA&_nc_gid=d2ccsMWZPhiRsCdY5Sc4xw&_nc_tpa=Q5bMBQH4GZcXDD61NIunmCraxTmeusmpLphxiasIzxuFirdp5eTXN1QRyujgwSU5kk9doc1GpLeR4kmF&stp=c0.5000x0.5000f_dst-emg0_q75_tt6&ur=a86139&_nc_sid=58080a&oh=00_Af4Hl6MwE2CPgrPh2N_mCzX06YspOGcU39mRMVapQhmSTg&oe=6A1E63D3", "invest": 3026.61, "leads": 3875, "impressoes": 437883}, {"name": "003 - VID - Vamos entrar com a peca no banho niqueo", "thumb": "https://scontent.xx.fbcdn.net/v/t15.5256-10/664282958_1505277307848461_4597266625531074571_n.jpg?_nc_cat=100&ccb=1-7&_nc_ohc=HvAyDcT1sTMQ7kNvwFxOpEu&_nc_oc=AdqSUFcqnEcEPCvppjDKVwk5_JzUYQk-U-GpTVxap6CPDR3rZ15k-LLM_HeJqxsPxGg&_nc_zt=23&_nc_ht=scontent.xx&edm=AOgd6ZUEAAAA&_nc_gid=d2ccsMWZPhiRsCdY5Sc4xw&_nc_tpa=Q5bMBQHMj5WCPUp-s03wPJ1VeSEkXbHao2kz8PB5NFuHDovciDUJC09CHAM6jBZ_V64U4UTC_2tmhWQ_&stp=c0.5000x0.5000f_dst-emg0_q75_tt6&ur=a86139&_nc_sid=58080a&oh=00_Af6MSKuCQ0XNp5Tb8eK6CAmZbpqEZn69G2GSOEhwfdyUzw&oe=6A1E7390", "invest": 2850.55, "leads": 3307, "impressoes": 341784}, {"name": "Post do Instagram: Quer aprender o processo? Siga...", "thumb": "https://scontent.xx.fbcdn.net/v/t15.5256-10/652202986_2363529314071554_6981488136829206344_n.jpg?_nc_cat=105&ccb=1-7&_nc_ohc=j1Z77-SMhr4Q7kNvwGmpwHR&_nc_oc=AdpyFB5p4mQTzsGnIJ7AoSgpVaTd1v4WdzAvnVs6ENpA_SfpX-sONtA9JR9sQl8T-y8&_nc_zt=23&_nc_ht=scontent.xx&edm=AOgd6ZUEAAAA&_nc_gid=d2ccsMWZPhiRsCdY5Sc4xw&_nc_tpa=Q5bMBQEgw5y8hbda0RIfOoOMuE73S_HIYHKt0w_TN_QJVLrK4Ckq_qeeZCZvQFeOt2M6H-CeCHSpkdD0&stp=c0.5000x0.5000f_dst-emg0_q75_tt6&ur=a7ce7f&_nc_sid=58080a&oh=00_Af5cbjbQw8WDN5PdGFjY6wOGwAH5iRn7-Al89G35GpSa8Q&oe=6A1E7E8D", "invest": 2461.59, "leads": 0, "impressoes": 1064209}, {"name": "Post do Instagram: Banho de Cromo. Curso 100%...", "thumb": "https://scontent.xx.fbcdn.net/v/t15.5256-10/649198583_897729529775138_9164833369636075360_n.jpg?_nc_cat=111&ccb=1-7&_nc_ohc=_CEcm35QDK8Q7kNvwGlQd7H&_nc_oc=AdqQOm7ULwbSmmuGZmxhzz2hWG-lGkSzU5c8Dkn7soNXPxSok2F01eLysoeR2LJ4spM&_nc_zt=23&_nc_ht=scontent.xx&edm=AOgd6ZUEAAAA&_nc_gid=d2ccsMWZPhiRsCdY5Sc4xw&_nc_tpa=Q5bMBQEfOEyB4DUgw8cNdPm69yto1_BBWCEUlpGeobrm9PE-V316qA1eSQFH-EtnAGu7cRz-IRIf4pt8&stp=c0.5000x0.5000f_dst-emg0_q75_tt6&ur=a7ce7f&_nc_sid=58080a&oh=00_Af6zHj14mHyXyn8H2Nq0X8NrvcwUvum9lROCc-05TNKClw&oe=6A1E7F46", "invest": 2459.54, "leads": 0, "impressoes": 499609}, {"name": "004 - VID - Dia vinte e cinco de maio V2", "thumb": "https://scontent.xx.fbcdn.net/v/t15.5256-10/702450389_2158035688328790_7450952346883134552_n.jpg?_nc_cat=102&ccb=1-7&_nc_ohc=G1Req5T-HoQQ7kNvwHnSYPp&_nc_oc=Adr2Kw392baeg0FICvFQp_1JJL4ux5nceKLh5YvSZJauEevClw-rCLqayXjLED1ByAw&_nc_zt=23&_nc_ht=scontent.xx&edm=AOgd6ZUEAAAA&_nc_gid=d2ccsMWZPhiRsCdY5Sc4xw&_nc_tpa=Q5bMBQFmpTcf6GkQqXymK5BrfIR74-n6Y4kN08ZhN8BldT3_JmCSrNc1l3iaVuw8XiDkSwL3wUu4qg9U&stp=c0.5000x0.5000f_dst-emg0_q75_tt6&ur=a86139&_nc_sid=58080a&oh=00_Af4yeCqvnhWKAcAagt-OKlwuB-Jqd0xzj_3UYFXaLxBfuA&oe=6A1E601C", "invest": 2038.05, "leads": 433, "impressoes": 366300}, {"name": "002 - VID - Que padrao por dentro igual peca nova", "thumb": "https://scontent.xx.fbcdn.net/v/t15.5256-10/664480609_1503393054460549_5101905110253679747_n.jpg?_nc_cat=107&ccb=1-7&_nc_ohc=uTvhH7veu_AQ7kNvwHQRqy1&_nc_oc=AdoPSxTRSxJBiMf8CH9zPz_fSSOfoAdtxprsQNraL4kH6P1TwwzHoPD0TBEiaIepL5I&_nc_zt=23&_nc_ht=scontent.xx&edm=AOgd6ZUEAAAA&_nc_gid=d2ccsMWZPhiRsCdY5Sc4xw&_nc_tpa=Q5bMBQF5KCrRjzwlEy1LQiDCXDCr5rG4fSkk0wJYtt5nDwa6mbeFRXk7aRkTcMddw9FQK33T9V5Q_8hL&stp=c0.5000x0.5000f_dst-emg0_q75_tt6&ur=a7ce7f&_nc_sid=58080a&oh=00_Af4zzx0GjhCYSuphqGhXuJ2Ga7WmSZQK2DcXxO1WGTztdA&oe=6A1E7F12", "invest": 1942.48, "leads": 0, "impressoes": 943731}, {"name": "001 - VID - Cromagem mais musica ao fundo", "thumb": "https://scontent.xx.fbcdn.net/v/t15.5256-10/651943785_1365590108917485_8029153199143357956_n.jpg?_nc_cat=105&ccb=1-7&_nc_ohc=y7vdCyE7cC4Q7kNvwEH6-pg&_nc_oc=AdovKwaE68R9iHHvdzW87KMN6KTBk-XOVibGIq1RUMzU4NJIcWi356Vo3r-MXyWShvk&_nc_zt=23&_nc_ht=scontent.xx&edm=AOgd6ZUEAAAA&_nc_gid=d2ccsMWZPhiRsCdY5Sc4xw&_nc_tpa=Q5bMBQFmnMDEVo5TE16uXUIaE4FB_Nrms4yVutdyEckBhNPzmKG7_hl8OM286-MqP6R2Fuu7TFOKEfjU&stp=c0.5000x0.5000f_dst-emg0_q75_tt6&ur=a7ce7f&_nc_sid=58080a&oh=00_Af6QMr0Y2CGbzZryut1TtdMrYnYEkBzkFKf1Ssk-U3Y2bw&oe=6A1E4F2D", "invest": 1918.19, "leads": 0, "impressoes": 1273394}, {"name": "001 - VID - Cromamos a maior tampa de motor do mundo", "thumb": "https://scontent.xx.fbcdn.net/v/t15.5256-10/667961545_1995539471047398_7320014931185098069_n.jpg?_nc_cat=104&ccb=1-7&_nc_ohc=UPLahaUQuh0Q7kNvwFxAhac&_nc_oc=AdoLYoCxhywytBtetFA93qZOdU-m9qVhFOW5j27hSO8qVia0w3cmO5-tKquXOdvu8PA&_nc_zt=23&_nc_ht=scontent.xx&edm=AOgd6ZUEAAAA&_nc_gid=d2ccsMWZPhiRsCdY5Sc4xw&_nc_tpa=Q5bMBQFTZVitheHvc3KEOpHbZejbIRUY0Y2pHN1jHxAyRwAU2HZpnl6fH2GiXals_dFklYj_MF7ufVaw&stp=c0.5000x0.5000f_dst-emg0_q75_tt6&ur=a86139&_nc_sid=58080a&oh=00_Af6FYa6HapPM5mMWyPDZ6jN39RHK7Ugen7EEd4uDEV4KYA&oe=6A1E551D", "invest": 1914.73, "leads": 1230, "impressoes": 240419}, {"name": "024 - VID - Curso de cromagem", "thumb": "https://scontent.xx.fbcdn.net/v/t15.5256-10/672929488_1449370623338034_2850027046032875113_n.jpg?_nc_cat=108&ccb=1-7&_nc_ohc=Ov0Jy2I6tNAQ7kNvwF0KVzv&_nc_oc=AdrEoTHB7S5Q8l5IvWwmTwj9QKcg9e7TeVSbVpUk1QCjRERwIsCOj0jEw_VJEaOTr1A&_nc_zt=23&_nc_ht=scontent.xx&edm=AOgd6ZUEAAAA&_nc_gid=d2ccsMWZPhiRsCdY5Sc4xw&_nc_tpa=Q5bMBQE5I_z_wb5A_SOLaMtEeHcydowRghb1IvtQZe958k6duCtqJd-6lqkFvNdcw2yuhS7ZGfrtUe-g&stp=c0.5000x0.5000f_dst-emg0_q75_tt6&ur=a86139&_nc_sid=58080a&oh=00_Af4y3OPOF8qr3tw5SR6lwdEthM-IyPFXFNIguZY8pX2xMg&oe=6A1E8053", "invest": 1910.49, "leads": 2176, "impressoes": 259437}, {"name": "005 - VID - Cromacao de peito de motor", "thumb": "https://scontent.xx.fbcdn.net/v/t15.5256-10/665955095_1426807495419702_8712283961013844820_n.jpg?_nc_cat=111&ccb=1-7&_nc_ohc=eEAGMm60SFYQ7kNvwFi945K&_nc_oc=AdqzglJsdVAM9MgNBwOGg4fdIR2wxEiCVOoXZH4VkkZMjvMudLEeEMUV4a6kylQ98wI&_nc_zt=23&_nc_ht=scontent.xx&edm=AOgd6ZUEAAAA&_nc_gid=d2ccsMWZPhiRsCdY5Sc4xw&_nc_tpa=Q5bMBQFRpdb6lZOLLCw1UUNrzlAGauHDLxzbM9gKNts_C2iGShirw0wMv4ODK-ms4mondT0hVW8VJi43&stp=c0.5000x0.5000f_dst-emg0_q75_tt6&ur=a86139&_nc_sid=58080a&oh=00_Af5pakzbbbsSTf0-6R5UFdYy0vi7Ba37j19XUdMneJ4Z1A&oe=6A1E688A", "invest": 1558.73, "leads": 1679, "impressoes": 203027}, {"name": "006 - VID - Cromando peça ao vivo", "thumb": "https://scontent.xx.fbcdn.net/v/t15.5256-10/663392495_1452528879998334_3654642979585157716_n.jpg?_nc_cat=109&ccb=1-7&_nc_ohc=SWKhSkGXrK8Q7kNvwETn0p-&_nc_oc=Adrj8zXvwybA5o6X9l3tbkO0BlIpLcAEG6picn3r-6BOlTOOIItqXMqqZlcCF37sxOQ&_nc_zt=23&_nc_ht=scontent.xx&edm=AOgd6ZUEAAAA&_nc_gid=d2ccsMWZPhiRsCdY5Sc4xw&_nc_tpa=Q5bMBQFLmkDLsP148KiDAMtSK8rv9pnfcc_SSlnLhDdtF2WRsgTT7y2gAcG-lDkZqZolMyYwR4cr6jaZ&stp=c0.5000x0.5000f_dst-emg0_q75_tt6&ur=a7ce7f&_nc_sid=58080a&oh=00_Af7RY7QlGE_b-qb5rplDa73vbjI-4_OBmeNTLCHzPB2x9w&oe=6A1E694E", "invest": 1402.0, "leads": 2, "impressoes": 945382}];
+var DB_INV_META=63657.96, DB_IMPOSTO=7829.65, DB_LEAGUE=11700;
+var DB_LEADS_TOTAL=28381, DB_LEADS_LP=15685, DB_COMPRADORES=532;
+var _dbPie=null, _dbBar=null;
+
+function renderDebriefing(){
+  var k=window._dbKiwify;
+  var COLS=['#d4a800','#16a34a','#3b82f6','#8b5cf6','#ef4444','#f97316','#14b8a6','#ec4899'];
+  var vCrom=k?k.vendas:461;
+  var fCrom=k?k.fat:vCrom*797;
+  var fPint=k&&k.bumpFatProd?(k.bumpFatProd['Pintura Eletrostatica na Pratica 1.0']||0):0;
+  var fGalv=k&&k.bumpFatProd?(k.bumpFatProd['Galvanizado Pro -1.0']||0):0;
+  var vBump=k?k.bumpVendas:0;
+  var fatTotal=fCrom+fPint+fGalv;
+  var reemb=k?k.reembolsos:15;
+  var invCI=DB_INV_META+DB_IMPOSTO+DB_LEAGUE;
+  var cpl=DB_INV_META/DB_LEADS_LP;
+  var cac=invCI/DB_COMPRADORES;
+  var roas=fatTotal/invCI;
+  function s(id,v){var e=document.getElementById(id);if(e)e.textContent=v;}
+  s('db-fat-total',fBRL(fatTotal));
+  s('db-fat-sub',fBRL(fCrom)+' Cromador + '+fBRL(fPint+fGalv)+' Bumps');
+  s('db-vend-total',(vCrom+vBump).toLocaleString('pt-BR'));
+  s('db-vend-sub',vCrom+' Cromador + '+vBump+' Order Bumps');
+  s('db-inv-ci',fBRL(invCI));
+  s('db-roas',roas.toFixed(2));
+  s('db-roas-sub',fBRL(fatTotal)+' / '+fBRL(invCI));
+  s('db-roas-hdr',roas.toFixed(2));
+  s('db-cpl',fBRL(cpl));
+  s('db-cac',fBRL(cac));
+  s('db-v-crom',vCrom.toLocaleString('pt-BR'));
+  s('db-f-crom','Faturamento: '+fBRL(fCrom));
+  var vPint=fPint>0?Math.round(fPint/237):0;
+  var vGalv=fGalv>0?Math.round(fGalv/197):0;
+  s('db-v-pint',vPint.toLocaleString('pt-BR'));
+  s('db-f-pint','Faturamento: '+fBRL(fPint));
+  s('db-v-galv',vGalv.toLocaleString('pt-BR'));
+  s('db-f-galv','Faturamento: '+fBRL(fGalv));
+  var bumpReembTot=k&&k.bumpReembolsos?Object.values(k.bumpReembolsos).reduce(function(a,b){return a+b;},0):0;
+  s('db-reemb',reemb+(bumpReembTot?' (+'+bumpReembTot+' bumps)':''));
+  s('db-reemb-sub',vCrom>0?(reemb/vCrom*100).toFixed(1)+'% das vendas':'-');
+
+  // Funil
+  dbRenderFunil(vCrom,vBump);
+
+  // Graficos
+  dbGLeads();
+  dbGVendas(k);
+  dbGGasto();
+  renderDbDim();
+  dbRenderCriativos();
+}
+
+function dbRenderFunil(vCrom,vBump){
+  var el=document.getElementById('db-funil');
+  if(!el) return;
+  el.innerHTML='';
+  var etapas=[
+    {label:'Leads Totais',val:DB_LEADS_TOTAL,cor:'#4a3520'},
+    {label:'Leads Pagos (LP)',val:DB_LEADS_LP,cor:'#6b4e2a'},
+    {label:'Vendas Cromador Pro',val:vCrom,cor:'#d4a800'},
+    {label:'Vendas Order Bumps',val:vBump,cor:'#16a34a'},
+    {label:'Compradores da Base',val:DB_COMPRADORES,cor:'#1d4ed8'}
+  ];
+  var maxW=300;
+  etapas.forEach(function(e,i){
+    var w=Math.max(60,Math.round(maxW*e.val/DB_LEADS_TOTAL));
+    var pw=i>0?Math.max(60,Math.round(maxW*etapas[i-1].val/DB_LEADS_TOTAL)):w;
+    var tl=Math.round((pw-w)/2);
+    var pct=i>0?(e.val/etapas[i-1].val*100).toFixed(1)+'%':null;
+    if(pct){
+      var badge=document.createElement('div');
+      badge.style.cssText='background:#1d4ed8;color:#fff;font-size:10px;font-weight:700;padding:2px 10px;border-radius:10px;margin-bottom:2px';
+      badge.textContent=pct;
+      el.appendChild(badge);
+    }
+    var trap=document.createElement('div');
+    var cpVal='polygon('+tl+'px 0%,calc(100% - '+tl+'px) 0%,100% 100%,0% 100%)';
+    trap.style.cssText='display:flex;align-items:center;justify-content:center;flex-direction:column;height:50px;background:'+e.cor+';border-radius:3px;width:'+w+'px;clip-path:'+cpVal;
+    var lbl=document.createElement('div');
+    lbl.style.cssText='font-size:9px;color:rgba(255,255,255,.75);text-transform:uppercase;letter-spacing:.8px;text-align:center;padding:0 8px';
+    lbl.textContent=e.label;
+    var num=document.createElement('div');
+    num.style.cssText='font-size:18px;font-weight:900;color:#fff';
+    num.textContent=e.val.toLocaleString('pt-BR');
+    trap.appendChild(lbl);trap.appendChild(num);el.appendChild(trap);
+  });
+}
+
+function dbGLeads(){
+  var ctx=document.getElementById('db-g-leads');
+  if(!ctx) return;
+  if(ctx._ch) ctx._ch.destroy();
+  ctx._ch=new Chart(ctx,{
+    type:'bar',
+    data:{labels:DB_LDIAS,datasets:[
+      {label:'Leads/dia',data:DB_LVALS,backgroundColor:'rgba(212,168,0,.65)',yAxisID:'y',borderRadius:2},
+      {label:'Compradores/dia',data:DB_CVALS,type:'line',borderColor:'#16a34a',backgroundColor:'rgba(22,163,74,.1)',fill:true,tension:.4,pointRadius:3,yAxisID:'y2'}
+    ]},
+    options:{plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:10}}}},scales:{
+      x:{grid:{display:false},ticks:{font:{size:9},maxRotation:45}},
+      y:{grid:G,beginAtZero:true,ticks:{font:{size:9}}},
+      y2:{position:'right',grid:{display:false},beginAtZero:true,ticks:{font:{size:9}}}
+    }}
+  });
+}
+
+function dbGVendas(k){
+  var ctx=document.getElementById('db-g-vendas');
+  if(!ctx||!k||!k.byDia) return;
+  if(ctx._ch) ctx._ch.destroy();
+  var dias=Object.keys(k.byDia).sort();
+  var vv=dias.map(function(d){return (k.byDia[d]&&k.byDia[d].vendas)||0;});
+  var ff=dias.map(function(d){return (k.byDia[d]&&k.byDia[d].fat)||0;});
+  var vb=dias.map(function(d){
+    var p=0,g=0;
+    if(k.bumpByDia&&k.bumpByDia[d]){
+      p=k.bumpByDia[d]['Pintura Eletrostatica na Pratica 1.0']||0;
+      g=k.bumpByDia[d]['Galvanizado Pro -1.0']||0;
+    }
+    return p+g;
+  });
+  var lbls=dias.map(function(d){var p=d.split('-');return p[2]+'/'+p[1];});
+  ctx._ch=new Chart(ctx,{
+    type:'bar',
+    data:{labels:lbls,datasets:[
+      {label:'Cromador Pro 2.0',data:vv,backgroundColor:'rgba(212,168,0,.8)',borderRadius:3,stack:'v'},
+      {label:'Order Bumps',data:vb,backgroundColor:'rgba(22,163,74,.7)',borderRadius:3,stack:'v'},
+      {label:'Faturamento R$',data:ff,type:'line',borderColor:'#d4a800',tension:.4,pointRadius:2,yAxisID:'y2',fill:false}
+    ]},
+    options:{plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:10}}}},scales:{
+      x:{grid:{display:false},ticks:{font:{size:9},maxRotation:45}},
+      y:{grid:G,stacked:true,beginAtZero:true,ticks:{font:{size:9}}},
+      y2:{position:'right',grid:{display:false},beginAtZero:true,ticks:{font:{size:9},callback:function(v){return 'R$'+Math.round(v/1000)+'k';}}}
+    }}
+  });
+}
+
+function dbGGasto(){
+  var ctx=document.getElementById('db-g-gasto');
+  if(!ctx) return;
+  if(ctx._ch) ctx._ch.destroy();
+  var gmap={};
+  cachedMeta.forEach(function(r){
+    var d=(r['Date']||'').slice(0,10);
+    if(!d||d>'2026-05-28') return;
+    var s=parseFloat((r['Spend (Cost, Amount Spent)']||'0').replace(/\./g,'').replace(',','.'));
+    var pts=d.split('-');
+    var lbl=pts[2]+'/'+pts[1];
+    gmap[lbl]=(gmap[lbl]||0)+s;
+  });
+  var gd=Object.keys(gmap).sort();
+  var gv=gd.map(function(d){return Math.round(gmap[d]*100)/100;});
+  ctx._ch=new Chart(ctx,{
+    type:'bar',
+    data:{labels:gd,datasets:[{label:'Gasto Meta Ads (R$)',data:gv,backgroundColor:'rgba(59,130,246,.7)',borderRadius:2}]},
+    options:{plugins:{legend:{display:false}},scales:{
+      x:{grid:{display:false},ticks:{font:{size:9},maxRotation:45}},
+      y:{grid:G,beginAtZero:true,ticks:{font:{size:9},callback:function(v){return 'R$'+v.toLocaleString('pt-BR');}}}
+    }}
+  });
+}
+
+function renderDbDim(){
+  var k=window._dbKiwify;
+  if(!k||!k._rows) return;
+  var sel=document.getElementById('db-dim');
+  var field=sel?sel.value:'utm_source';
+  var dimMap={utm_source:'Plataforma',utm_medium:'Publico',utm_content:'Criativo',utm_campaign:'Campanha'};
+  var dimLabel=dimMap[field];
+  var COLS=['#d4a800','#16a34a','#3b82f6','#8b5cf6','#ef4444','#f97316','#14b8a6','#ec4899'];
+  var PRODS=['Cromador Pro 2.0','Pintura Eletrostatica na Pratica 1.0','Galvanizado Pro -1.0'];
+  var grupos={};
+  k._rows.forEach(function(r){
+    var prod=(r['Product_product_name']||'').trim();
+    if(PRODS.indexOf(prod)<0) return;
+    var st=(r['order_status']||'').toLowerCase();
+    if(st!=='paid'&&st!=='paided') return;
+    var key=(r[field]||'').trim()||'Sem tracking';
+    var fat=parseFloat((r['sale_value']||r['price']||'0').replace(',','.'))||797;
+    if(!grupos[key]) grupos[key]={vendas:0,fat:0,crom:0,bump:0};
+    grupos[key].vendas++;
+    grupos[key].fat+=fat;
+    if(prod==='Cromador Pro 2.0') grupos[key].crom++;
+    else grupos[key].bump++;
+  });
+  var entries=Object.entries(grupos).sort(function(a,b){return b[1].vendas-a[1].vendas;}).slice(0,8);
+  var lbls=entries.map(function(e){return e[0].length>28?e[0].slice(0,26)+'...':e[0];});
+  var vVals=entries.map(function(e){return e[1].vendas;});
+  var fVals=entries.map(function(e){return e[1].fat;});
+  var tot=vVals.reduce(function(a,b){return a+b;},0)||1;
+  var pTit=document.getElementById('db-pie-title');
+  var bTit=document.getElementById('db-bar-title');
+  if(pTit) pTit.textContent='Vendas por '+dimLabel;
+  if(bTit) bTit.textContent='Faturamento por '+dimLabel;
+  var cp=document.getElementById('db-g-pie');
+  if(cp){
+    if(_dbPie)_dbPie.destroy();
+    _dbPie=new Chart(cp,{type:'doughnut',data:{labels:lbls,datasets:[{data:vVals,backgroundColor:COLS,borderColor:'#fff',borderWidth:2}]},options:{cutout:'58%',plugins:{legend:{display:false}}}});
+    var leg=document.getElementById('db-pie-leg');
+    if(leg) leg.innerHTML=entries.map(function(e,i){
+      return '<div style="display:flex;justify-content:space-between;padding:2px 0"><div style="display:flex;align-items:center;gap:5px"><div style="width:8px;height:8px;border-radius:2px;background:'+COLS[i]+'"></div><span style="color:var(--muted)">'+lbls[i]+'</span></div><b>'+e[1].vendas+'</b></div>';
+    }).join('');
+  }
+  var cb=document.getElementById('db-g-bar');
+  if(cb){
+    if(_dbBar)_dbBar.destroy();
+    _dbBar=new Chart(cb,{type:'bar',data:{labels:lbls,datasets:[{data:fVals,backgroundColor:COLS,borderRadius:4}]},options:{plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{grid:G,beginAtZero:true,ticks:{font:{size:10},callback:function(v){return 'R$'+Math.round(v/1000)+'k';}}}}}});
+  }
+  var thead=document.getElementById('db-tbl-head');
+  var tbody=document.getElementById('db-tbl-body');
+  if(thead) thead.innerHTML='<tr style="border-bottom:2px solid var(--border)"><th style="padding:8px;color:var(--muted);font-size:11px;text-align:left">'+dimLabel.toUpperCase()+'</th><th style="padding:8px;color:var(--muted);font-size:11px;text-align:right">VENDAS</th><th style="padding:8px;color:var(--muted);font-size:11px;text-align:right">FATURAMENTO</th><th style="padding:8px;color:var(--muted);font-size:11px;text-align:right">CROMADOR PRO</th><th style="padding:8px;color:var(--muted);font-size:11px;text-align:right">ORDER BUMPS</th><th style="padding:8px;color:var(--muted);font-size:11px;text-align:right">% BUMPS</th></tr>';
+  if(tbody) tbody.innerHTML=entries.map(function(e,i){
+    var pct=e[1].vendas>0?(e[1].bump/e[1].vendas*100).toFixed(1)+'%':'-';
+    return '<tr style="border-bottom:1px solid var(--border)"><td style="padding:8px;font-size:12px"><div style="display:flex;align-items:center;gap:6px"><div style="width:8px;height:8px;border-radius:2px;background:'+COLS[i]+'"></div>'+e[0]+'</div></td><td style="padding:8px;font-size:12px;text-align:right;font-weight:700">'+e[1].vendas+'</td><td style="padding:8px;font-size:12px;text-align:right">'+fBRL(e[1].fat)+'</td><td style="padding:8px;font-size:12px;text-align:right">'+e[1].crom+'</td><td style="padding:8px;font-size:12px;text-align:right">'+e[1].bump+'</td><td style="padding:8px;font-size:12px;text-align:right">'+pct+'</td></tr>';
+  }).join('');
+}
+
+function dbRenderCriativos(){
+  var tbody=document.getElementById('db-cri-body');
+  if(!tbody) return;
+  if(!DB_CRIATIVOS||!DB_CRIATIVOS.length){
+    tbody.innerHTML='<tr><td colspan="5" style="padding:16px;text-align:center;color:var(--muted)">Sem dados de criativos</td></tr>';
+    return;
+  }
+  tbody.innerHTML=DB_CRIATIVOS.map(function(c){
+    var cpl=c.leads>0?fBRL(c.invest/c.leads):'-';
+    return '<tr style="border-bottom:1px solid var(--border)"><td style="padding:10px 8px"><div style="display:flex;align-items:center;gap:10px">'+(c.thumb?'<img src="'+c.thumb+'" style="width:54px;height:54px;object-fit:cover;border-radius:6px;flex-shrink:0" onerror="this.style.display=\'none\'">':'')+'<span style="font-size:11px;color:var(--muted)">'+c.name+'</span></div></td><td style="padding:10px 8px;text-align:right;font-size:12px;font-weight:600">'+fBRL(c.invest)+'</td><td style="padding:10px 8px;text-align:right;font-size:12px">'+c.leads.toLocaleString('pt-BR')+'</td><td style="padding:10px 8px;text-align:right;font-size:12px">'+cpl+'</td><td style="padding:10px 8px;text-align:right;font-size:12px">'+c.impressoes.toLocaleString('pt-BR')+'</td></tr>';
+  }).join('');
+}
+// === /DEBRIEFING ===
 
 // ── CLOUDFLARE WORKER URL ─────────────────────────────────────────────────────
 // Substitua pela URL do seu Worker após o deploy.
@@ -1258,6 +1609,7 @@ function processKiwify(rows, d1, d2) {
   });
 
   return {
+    _rows:rows,
     vendas:vendas, fat:fat, reembolsos:reembolsos, fatReemb:fatReemb, aguardando:aguardando, vendasPagas:vendasPagas, byPlataforma:byPlataforma, byOrigemCat:byOrigemCat, byPublicoCat:byPublicoCat,
     byDia:byDia, bySemDia:bySemDia, byHora:byHora, byProduto:byProduto,
     bumpVendas:bumpVendas, bumpFat:bumpFat, bumpReembolsos:bumpReembolsos, bumpFatProd:bumpFatProd,
@@ -1431,6 +1783,7 @@ function applyFilters() {
   var badge = document.getElementById('compBadge');
   if (badge) badge.style.display = (f.c1 && f.c2) ? 'inline-flex' : 'none';
   var kiwify = processKiwify(cachedKiwify, f.d1, f.d2);
+  window._dbKiwify = kiwify;
   var metas  = processMetas(cachedMetas);
   renderDashboard(m, mAll, mp, wp, wpp, pesq, cachedPlan, google, kiwify, metas);
 }
@@ -3458,13 +3811,14 @@ function toggleTheme() {
 })();
 
 function switchTab(tab) {
-  var tabs = ['overview','planejamento','pesquisa','insights','vendas'];
+  var tabs = ['overview','planejamento','pesquisa','insights','vendas','debriefing'];
   tabs.forEach(function(t){
     var btn  = document.getElementById('tab-'+t);
     var pane = document.getElementById('pane-'+t);
     if (btn)  btn.classList.toggle('tab-active', t===tab);
     if (pane) pane.style.display = t===tab ? 'block' : 'none';
   });
+  if (tab === 'debriefing') { setTimeout(renderDebriefing, 100); }
 }
 
 // ── FETCH ─────────────────────────────────────────────────────────────────────
