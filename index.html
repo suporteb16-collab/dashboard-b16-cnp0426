@@ -1049,8 +1049,8 @@ function renderDebriefingVendas(){
   s('db3FatSub',fBRL(fCrom)+' Cromador + '+fBRL(fPint+fGalv)+' Bumps');
   s('db3Roas',roas.toFixed(2));
   s('db3CAC',fBRL(cac));
-  s('db3CPL', fBRL(DB_INV_META / DB_LEADS_LP));
-  s('db3CPLSub', 'R$ '+( DB_INV_META / DB_LEADS_LP ).toFixed(2).replace('.',',') + ' por lead LP');
+  s('db3CPL', 'R$ 1,67');
+  s('db3CPLSub', 'Custo por Lead Geral');
   s('db3InvestTotal',fBRL(invCI));
   s('db3Recompra',recompraVal);
   s('db3RecompraSub',recompraVal+' clientes com cross-sell');
@@ -1075,11 +1075,11 @@ function renderDebriefingVendas(){
 function renderDb2Origem(){
   var k=window._dbKiwify;
   if(!k||!k._rows) return;
-  // Reutilizar as mesmas funções de renderização da aba Vendas
-  // mas apontando para os IDs db2
+  // Filtrar apenas os 3 produtos do lançamento + status paid
   var rows=k._rows.filter(function(r){
     var st=(r['order_status']||'').toLowerCase();
-    return st==='paid'||st==='paided';
+    var prod=(r['Product_product_name']||'').trim();
+    return (st==='paid'||st==='paided') && TODOS_PRODUTOS.indexOf(prod)>=0;
   });
 
   // Por utm_source — categorizado por canal com cores
@@ -1170,9 +1170,10 @@ function renderDb2Origem(){
   // Donut origem
   setDb2OrigemMode('origem');
 
-  // Plataforma donut + bar
+  // Plataforma donut + bar — cores fixas por canal
+  var CANAL_COR_MAP={'YouTube':'#ef4444','WhatsApp':'#16a34a','Instagram':'#8b5cf6','Comercial':'#6b7280','Outros':'#d4a800','Sem Tracking':'#4b5563','Meta Ads':'#3b82f6','Afiliado':'#f97316'};
   var platEntries=Object.entries(k.byPlataforma||{}).sort(function(a,b){return b[1].vendas-a[1].vendas;});
-  var COLS=['#d4a800','#16a34a','#3b82f6','#8b5cf6','#ef4444','#f97316'];
+  var COLS=platEntries.map(function(e){return CANAL_COR_MAP[e[0]]||'#d4a800';});
   var platLbls=platEntries.map(function(e){return e[0];});
   var platVals=platEntries.map(function(e){return e[1].vendas;});
   var platFat=platEntries.map(function(e){return e[1].fat;});
@@ -1326,8 +1327,8 @@ function dbRenderFunil(vCrom,vBump){
   var etapas=[
     {label:'Leads Totais',      val:DB_LEADS_TOTAL, cor:'#3d2b14'},
     {label:'Leads Pagos (LP)',  val:DB_LEADS_LP,    cor:'#5c3d1a'},
-    {label:'Compradores Base',  val:DB_COMPRADORES, cor:'#1d4ed8'},
     {label:'Vendas Cromador',   val:vCrom,          cor:'#b8860b'},
+    {label:'Compradores Base',  val:DB_COMPRADORES, cor:'#1d4ed8'},
     {label:'Vendas Bumps',      val:vBump,          cor:'#16a34a'},
   ];
   el.style.cssText='width:100%';
@@ -1805,6 +1806,22 @@ function numKiwify(v) {
 
 // Mapeamento utm_source → plataforma (Mundial Cromo)
 // UTMs reais: nomes de vídeo numerados (VID) = Meta Ads, criativos AD = Meta Ads, nomes próprios = Afiliado
+// Mapeamento utm_source → canal visual (Mundial Cromo) — para gráficos de plataforma/origem
+function srcToCanal(s) {
+  if (!s) return 'Sem Tracking';
+  var vl = s.toLowerCase();
+  if (vl.indexOf('youtube') >= 0 || vl.indexOf('chat-yt') >= 0 ||
+      vl.indexOf('qrcode') >= 0   || /^\d{3}\s*-\s*vid/i.test(s)) return 'YouTube';
+  if (vl.indexOf('wpp') >= 0 || vl.indexOf('whatsapp') >= 0 ||
+      vl.indexOf('wap') >= 0 || vl.indexOf('mensagem') >= 0)       return 'WhatsApp';
+  if (vl.indexOf('ig') >= 0 || vl.indexOf('instagram') >= 0 ||
+      vl.indexOf('bio') >= 0)                                       return 'Instagram';
+  if (vl.indexOf('larissa') >= 0 || vl.indexOf('marcela') >= 0 ||
+      vl.indexOf('kamil') >= 0   || vl.indexOf('ray') >= 0 ||
+      vl.indexOf('paula') >= 0   || vl.indexOf('comercial') >= 0)  return 'Comercial';
+  return 'Outros';
+}
+
 function srcToPlat(s) {
   if (!s) return 'Sem Tracking';
   // Vídeos numerados = Meta Ads (ex: "001 - VID - ...")
@@ -1918,11 +1935,11 @@ function processKiwify(rows, d1, d2) {
       var srcKey = src || 'Sem Tracking';
       if (!byUTMSource[srcKey]) byUTMSource[srcKey]=0; byUTMSource[srcKey]++;
 
-      // Por plataforma (mapeamento utm_source — Mundial Cromo)
-      var plat = srcToPlat(src);
+      // Por plataforma — mesmas categorias do debriefing
+      var plat = srcToCanal(src);
       if (!byPlataforma[plat]) byPlataforma[plat] = {vendas:0, fat:0};
       byPlataforma[plat].vendas++;
-      byPlataforma[plat].fat += fat_v; // fat real da linha
+      byPlataforma[plat].fat += fat_v;
 
       // Classificação Origem: Meta Ads / Afiliado / Sem Tracking
       var srcL = src.toLowerCase();
