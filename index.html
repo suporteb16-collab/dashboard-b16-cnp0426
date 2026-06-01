@@ -629,6 +629,26 @@ input[type=date]{background:transparent;border:none;color:#ccc;font-family:'DM S
       </div>
     </div>
 
+    <!-- ── CPL LEADS ──────────────────────────────────────────────────── -->
+    <div class="section-label">CPL de Captação — Leads Pagos</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:28px">
+      <div class="bn">
+        <div class="bn-lbl">CPL Geral</div>
+        <div class="bn-val" style="font-size:40px">R$ 1,67</div>
+        <div class="bn-sub">Todos os públicos · período atual</div>
+      </div>
+      <div class="bn">
+        <div class="bn-lbl">CPL Público Frio</div>
+        <div class="bn-val" style="font-size:40px">R$ 1,73</div>
+        <div class="bn-sub">Topo de funil · interesse frio</div>
+      </div>
+      <div class="bn">
+        <div class="bn-lbl">CPL Público Quente</div>
+        <div class="bn-val" style="font-size:40px">R$ 1,62</div>
+        <div class="bn-sub">Remarketing · base aquecida</div>
+      </div>
+    </div>
+
     <!-- ── SECAO 2: VENDAS E FAT POR DIA ──────────────────────────────── -->
     <div class="section-label">Evolucao Diaria de Vendas</div>
     <div class="grid-2col">
@@ -1049,7 +1069,7 @@ function renderDb2Origem(){
   // Por utm_source
   var srcMap={};
   rows.forEach(function(r){
-    var v=(r['TrackingParameters_utm_source']||r['utm_source']||'').trim()||'Organico';
+    var v=(r['TrackingParameters_utm_source']||r['utm_source']||'').trim()||'Sem Tracking';
     srcMap[v]=(srcMap[v]||0)+1;
   });
   renderOrigemList('db2OrigemSource',srcMap);
@@ -1057,7 +1077,7 @@ function renderDb2Origem(){
   // Por utm_content
   var cntMap={};
   rows.forEach(function(r){
-    var v=(r['TrackingParameters_utm_content']||r['utm_content']||'').trim()||'Sem tracking';
+    var v=(r['TrackingParameters_utm_content']||r['utm_content']||'').trim()||'Sem Tracking';
     cntMap[v]=(cntMap[v]||0)+1;
   });
   renderOrigemList('db2OrigemContent',cntMap);
@@ -1065,7 +1085,7 @@ function renderDb2Origem(){
   // Por utm_medium
   var medMap={};
   rows.forEach(function(r){
-    var v=(r['TrackingParameters_utm_medium']||r['utm_medium']||'').trim()||'Sem tracking';
+    var v=(r['TrackingParameters_utm_medium']||r['utm_medium']||'').trim()||'Sem Tracking';
     medMap[v]=(medMap[v]||0)+1;
   });
   renderOrigemList('db2OrigemMedium',medMap);
@@ -1128,9 +1148,16 @@ function setDb2OrigemMode(mode){
   var rows=k._rows.filter(function(r){var st=(r['order_status']||'').toLowerCase();return st==='paid'||st==='paided';});
   var map={};
   rows.forEach(function(r){
-    var v=mode==='origem'
-      ?(r['TrackingParameters_utm_source']||r['utm_source']||'Organico').trim()
-      :(r['TrackingParameters_utm_medium']||r['utm_medium']||'Sem tracking').trim();
+    var src=(r['TrackingParameters_utm_source']||r['utm_source']||'').trim();
+    var med=(r['TrackingParameters_utm_medium']||r['utm_medium']||'').trim();
+    var v;
+    if (mode==='origem') {
+      // Agrupa por categoria de plataforma (não pelo nome bruto)
+      v = srcToPlat(src);
+      if (v==='Outros') v='Sem Tracking';
+    } else {
+      v = med || 'Sem Tracking';
+    }
     map[v]=(map[v]||0)+1;
   });
   var entries=Object.entries(map).sort(function(a,b){return b[1]-a[1];}).slice(0,6);
@@ -1143,7 +1170,7 @@ function setDb2OrigemMode(mode){
     ctxD._ch=new Chart(ctxD,{type:'doughnut',data:{labels:lbls,datasets:[{data:vals,backgroundColor:COLS,borderWidth:2}]},options:{cutout:'58%',plugins:{legend:{display:false}}}});
   }
   var titEl=document.getElementById('db2OrigemDonutTitle');
-  if(titEl) titEl.textContent=mode==='origem'?'Distribuicao por Origem':'Distribuicao por Publico';
+  if(titEl) titEl.textContent=mode==='origem'?'Distribuicao por Origem':'Distribuicao por Medio';
   var legEl=document.getElementById('db2OrigemDonutLegend');
   var tot=vals.reduce(function(a,b){return a+b;},0)||1;
   if(legEl) legEl.innerHTML=entries.map(function(e,i){
@@ -1699,6 +1726,19 @@ function numKiwify(v) {
   return parseFloat(s) || 0;
 }
 
+// Mapeamento utm_source → plataforma (Mundial Cromo)
+// UTMs reais: nomes de vídeo numerados (VID) = Meta Ads, criativos AD = Meta Ads, nomes próprios = Afiliado
+function srcToPlat(s) {
+  if (!s) return 'Sem Tracking';
+  // Vídeos numerados = Meta Ads (ex: "001 - VID - ...")
+  if (/^\d{3}\s*-\s*vid/i.test(s)) return 'Meta Ads';
+  // Criativos AD = Meta Ads (ex: "AD01 - ...")
+  if (/^ad\d+/i.test(s)) return 'Meta Ads';
+  // Nomes próprios = Afiliado (ex: "ARILDO RAMOS", "Gilmario Carlos Da Silva")
+  if (/^[A-ZÁÉÍÓÚÀÂÊÎÔÛÃÕÇ]/.test(s)) return 'Afiliado';
+  return 'Outros';
+}
+
 function processKiwify(rows, d1, d2) {
   var DATA_INI = KIWIFY_DATA_INI;
   var vendas=0, fat=0, reembolsos=0, fatReemb=0, aguardando=0;
@@ -1716,21 +1756,10 @@ function processKiwify(rows, d1, d2) {
   var vendasPagas = 0;
   window._emailProdutos = {}; // reset por chamada // vendas pagas via mídia paga (para CAC)
 
-  // Mapeamento utm_source → plataforma
-  var srcMap = {
-    'sms':              'SMS',
-    'qrcode':           'Youtube',
-    'chat-youtube':     'Youtube',
-    'bio-ig-organico':  'Instagram',
-    'email1':           'Email',
-    'mensagem-wpp1':    'WhatsApp',
-    'larissa-wpp':      'Comercial',
-    'marcela-wpp':      'Comercial',
-    'kamilly-wpp':      'Comercial',
-    'ray-wpp':          'Comercial',
-  };
-  // Orgânicos (excluir do CAC)
-  var organicSrcs = {'bio-ig-organico':1,'chat-youtube':1,'ig':1,'qrcode':1,'':1};
+  // Mapeamento utm_source → plataforma (Mundial Cromo) — dentro de processKiwify
+  // (srcToPlat é global, definida antes desta função)
+  // Orgânicos (excluir do CAC) — no Mundial Cromo não há utm_source orgânico mapeado
+  var organicSrcs = {'':1};
 
   window._kiwifyRowsGlobal = rows; // usado pelo módulo de abandono
 
@@ -1808,40 +1837,33 @@ function processKiwify(rows, d1, d2) {
       // Por produto
       if (prod) { if (!byProduto[prod]) byProduto[prod]={vendas:0,fat:0}; byProduto[prod].vendas++; byProduto[prod].fat+=fat_v; }
 
-      // Por UTM (inclui vazios como '(vazio)')
-      var srcKey = src || '(vazio)';
+      // Por UTM
+      var srcKey = src || 'Sem Tracking';
       if (!byUTMSource[srcKey]) byUTMSource[srcKey]=0; byUTMSource[srcKey]++;
 
-      // Por plataforma (mapeamento utm_source)
-      var plat = srcMap[src.toLowerCase()] || 'Outros';
+      // Por plataforma (mapeamento utm_source — Mundial Cromo)
+      var plat = srcToPlat(src);
       if (!byPlataforma[plat]) byPlataforma[plat] = {vendas:0, fat:0};
       byPlataforma[plat].vendas++;
       byPlataforma[plat].fat += fat_v; // fat real da linha
 
-      // Classificação Origem: Orgânico / Pago / Sem Tracking
+      // Classificação Origem: Meta Ads / Afiliado / Sem Tracking
       var srcL = src.toLowerCase();
-      var origemCat;
-      if (!src) origemCat = 'Sem Tracking';
-      else if (srcL === 'quente' || srcL === 'frio') origemCat = 'Pago';
-      else if (srcL.indexOf('ig') >= 0 || srcL.indexOf('org') >= 0 || srcL.indexOf('bio') >= 0 ||
-               srcL === 'qrcode' || srcL === 'chat-youtube') origemCat = 'Orgânico';
-      else origemCat = 'Sem Tracking';
+      var origemCat = srcToPlat(src); // reutiliza mesma função
+      if (origemCat === 'Outros') origemCat = 'Sem Tracking';
       if (!byOrigemCat[origemCat]) byOrigemCat[origemCat] = 0;
       byOrigemCat[origemCat]++;
 
-      // Classificação Público: Quente / Frio / Sem Tracking
-      var publicoCat;
-      if (srcL === 'quente') publicoCat = 'Quente';
-      else if (srcL === 'frio') publicoCat = 'Frio';
-      else publicoCat = 'Sem Tracking';
+      // Classificação Público: Meta Ads / Afiliado / Sem Tracking (mesmo que origem)
+      var publicoCat = origemCat;
       if (!byPublicoCat[publicoCat]) byPublicoCat[publicoCat] = 0;
       byPublicoCat[publicoCat]++;
 
       // Vendas pagas (mídia paga — exclui orgânicos para CAC)
       if (!organicSrcs[src.toLowerCase()]) vendasPagas++;
       if (term) { if (!byUTMTerm[term])     byUTMTerm[term]=0;     byUTMTerm[term]++;    }
-      var contKey = cont || '(vazio)'; if (!byUTMContent[contKey]) byUTMContent[contKey]=0; byUTMContent[contKey]++;
-      var medKey = med || '(vazio)'; if (!byUTMMedium[medKey]) byUTMMedium[medKey]=0; byUTMMedium[medKey]++;
+      var contKey = cont || 'Sem Tracking'; if (!byUTMContent[contKey]) byUTMContent[contKey]=0; byUTMContent[contKey]++;
+      var medKey = med || 'Sem Tracking'; if (!byUTMMedium[medKey]) byUTMMedium[medKey]=0; byUTMMedium[medKey]++;
 
       // Vendedores
       var medL = med.toLowerCase();
