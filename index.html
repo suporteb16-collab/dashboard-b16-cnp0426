@@ -908,9 +908,9 @@ input[type=date]{background:transparent;border:none;color:#ccc;font-family:'DM S
         <div class="bn-val" id="db3CAC" style="font-size:36px">-</div>
       </div>
       <div class="bn">
-        <div class="bn-lbl">Leads Compradores</div>
-        <div class="bn-val" id="db3LeadsComp" style="font-size:36px">532</div>
-        <div class="bn-sub">de 28.381 leads totais</div>
+        <div class="bn-lbl">CPL</div>
+        <div class="bn-val" id="db3CPL" style="font-size:36px">-</div>
+        <div class="bn-sub" id="db3CPLSub">Invest. Meta / Leads LP</div>
       </div>
       <div class="bn">
         <div class="bn-lbl">Invest. Total c/ Imposto</div>
@@ -925,6 +925,20 @@ input[type=date]{background:transparent;border:none;color:#ccc;font-family:'DM S
         <div class="bn-lbl">Clientes c/ Recompra</div>
         <div class="bn-val" id="db3Recompra" style="font-size:44px">-</div>
         <div class="bn-sub" id="db3RecompraSub">ja estavam na base</div>
+      </div>
+    </div>
+
+    <!-- Leads por canal -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:28px">
+      <div class="bn">
+        <div class="bn-lbl">Leads via LP (Landing Page)</div>
+        <div class="bn-val" style="font-size:40px">55,2%</div>
+        <div class="bn-sub">15.685 de 28.381 leads totais</div>
+      </div>
+      <div class="bn">
+        <div class="bn-lbl">Leads via Forms (Meta)</div>
+        <div class="bn-val" style="font-size:40px">44,8%</div>
+        <div class="bn-sub">12.696 de 28.381 leads totais</div>
       </div>
     </div>
 
@@ -1035,6 +1049,8 @@ function renderDebriefingVendas(){
   s('db3FatSub',fBRL(fCrom)+' Cromador + '+fBRL(fPint+fGalv)+' Bumps');
   s('db3Roas',roas.toFixed(2));
   s('db3CAC',fBRL(cac));
+  s('db3CPL', fBRL(DB_INV_META / DB_LEADS_LP));
+  s('db3CPLSub', 'R$ '+( DB_INV_META / DB_LEADS_LP ).toFixed(2).replace('.',',') + ' por lead LP');
   s('db3InvestTotal',fBRL(invCI));
   s('db3Recompra',recompraVal);
   s('db3RecompraSub',recompraVal+' clientes com cross-sell');
@@ -1066,13 +1082,74 @@ function renderDb2Origem(){
     return st==='paid'||st==='paided';
   });
 
-  // Por utm_source
-  var srcMap={};
+  // Por utm_source — categorizado por canal com cores
+  var canalMap = {};
   rows.forEach(function(r){
-    var v=(r['TrackingParameters_utm_source']||r['utm_source']||'').trim()||'Sem Tracking';
-    srcMap[v]=(srcMap[v]||0)+1;
+    var v = (r['TrackingParameters_utm_source']||r['utm_source']||'').trim();
+    var canal;
+    if (!v) {
+      canal = 'Sem Tracking';
+    } else {
+      var vl = v.toLowerCase();
+      // YouTube: qrcode, chat-youtube, ou nomes de vídeo VID
+      if (vl.indexOf('youtube') >= 0 || vl.indexOf('chat-yt') >= 0 ||
+          vl.indexOf('qrcode') >= 0 || /^\d{3}\s*-\s*vid/i.test(v)) {
+        canal = 'YouTube';
+      }
+      // WhatsApp
+      else if (vl.indexOf('wpp') >= 0 || vl.indexOf('whatsapp') >= 0 ||
+               vl.indexOf('wap') >= 0 || vl.indexOf('mensagem') >= 0) {
+        canal = 'WhatsApp';
+      }
+      // Instagram
+      else if (vl.indexOf('ig') >= 0 || vl.indexOf('instagram') >= 0 ||
+               vl.indexOf('bio') >= 0) {
+        canal = 'Instagram';
+      }
+      // Comercial (vendedores nominais)
+      else if (vl.indexOf('larissa') >= 0 || vl.indexOf('marcela') >= 0 ||
+               vl.indexOf('kamil') >= 0   || vl.indexOf('ray') >= 0 ||
+               vl.indexOf('paula') >= 0   || vl.indexOf('comercial') >= 0) {
+        canal = 'Comercial';
+      }
+      else {
+        canal = 'Outros';
+      }
+    }
+    canalMap[canal] = (canalMap[canal]||0) + 1;
   });
-  renderOrigemList('db2OrigemSource',srcMap);
+
+  // Renderizar utm_source categorizado com cores fixas por canal
+  var CANAL_CORES = {
+    'YouTube':      '#ef4444',
+    'WhatsApp':     '#16a34a',
+    'Instagram':    '#8b5cf6',
+    'Comercial':    '#6b7280',
+    'Outros':       '#d4a800',
+    'Sem Tracking': '#4b5563',
+  };
+  var canalOrder = ['YouTube','WhatsApp','Instagram','Comercial','Outros','Sem Tracking'];
+  var srcEl = document.getElementById('db2OrigemSource');
+  if (srcEl) {
+    var totalSrc = Object.values(canalMap).reduce(function(a,b){return a+b;},0)||1;
+    srcEl.innerHTML = canalOrder
+      .filter(function(c){ return canalMap[c] > 0; })
+      .map(function(c){
+        var v = canalMap[c];
+        var pct = (v/totalSrc*100).toFixed(1);
+        var barW = Math.max(pct,1);
+        var cor = CANAL_CORES[c]||'#d4a800';
+        return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border)">'
+          + '<div style="width:10px;height:10px;border-radius:3px;background:'+cor+';flex-shrink:0"></div>'
+          + '<div style="font-size:12px;color:var(--muted);min-width:90px">'+c+'</div>'
+          + '<div style="flex:1;background:var(--surface);border-radius:3px;height:14px;overflow:hidden">'
+          +   '<div style="height:100%;border-radius:3px;background:'+cor+';opacity:.8;width:'+barW+'%"></div>'
+          + '</div>'
+          + '<b style="font-size:13px;min-width:30px;text-align:right">'+v+'</b>'
+          + '<span style="font-size:11px;color:var(--muted);min-width:42px;text-align:right">'+pct+'%</span>'
+          + '</div>';
+      }).join('');
+  }
 
   // Por utm_content
   var cntMap={};
@@ -1247,11 +1324,11 @@ function dbRenderFunil(vCrom,vBump){
   if(!el) return;
   el.innerHTML='';
   var etapas=[
-    {label:'Leads Totais',    val:DB_LEADS_TOTAL, cor:'#3d2b14'},
-    {label:'Leads Pagos (LP)',val:DB_LEADS_LP,    cor:'#5c3d1a'},
-    {label:'Vendas Cromador', val:vCrom,          cor:'#b8860b'},
-    {label:'Vendas Bumps',    val:vBump,          cor:'#16a34a'},
-    {label:'Compradores Base',val:DB_COMPRADORES, cor:'#1d4ed8'}
+    {label:'Leads Totais',      val:DB_LEADS_TOTAL, cor:'#3d2b14'},
+    {label:'Leads Pagos (LP)',  val:DB_LEADS_LP,    cor:'#5c3d1a'},
+    {label:'Compradores Base',  val:DB_COMPRADORES, cor:'#1d4ed8'},
+    {label:'Vendas Cromador',   val:vCrom,          cor:'#b8860b'},
+    {label:'Vendas Bumps',      val:vBump,          cor:'#16a34a'},
   ];
   el.style.cssText='width:100%';
   etapas.forEach(function(e,i){
