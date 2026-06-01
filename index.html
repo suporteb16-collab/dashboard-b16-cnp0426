@@ -942,6 +942,43 @@ input[type=date]{background:transparent;border:none;color:#ccc;font-family:'DM S
       </div>
     </div>
 
+    <!-- CPL por Público -->
+    <div class="section-label">CPL por Publico</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:28px">
+      <!-- FRIO -->
+      <div class="bn" style="position:relative">
+        <div style="position:absolute;top:16px;right:16px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;color:#3b82f6;display:flex;align-items:center;gap:5px">
+          <span>❄️</span> FRIO
+        </div>
+        <div style="font-size:10px;font-weight:600;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:6px">CUSTO POR LEAD</div>
+        <div class="bn-val" style="font-size:48px;line-height:1">R$ 1,73</div>
+        <div style="margin:12px 0 10px;height:4px;background:var(--surface);border-radius:2px;overflow:hidden">
+          <div style="width:13.8%;height:100%;background:#3b82f6;border-radius:2px"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px;font-size:12px">
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Leads pagos</span><b>3.623</b></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Investido</span><b>R$ 6.257,59</b></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">% do total</span><b>13.8%</b></div>
+        </div>
+      </div>
+      <!-- QUENTE -->
+      <div class="bn" style="position:relative">
+        <div style="position:absolute;top:16px;right:16px;background:#fff7ed;border:1px solid #fed7aa;border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;color:#ef4444;display:flex;align-items:center;gap:5px">
+          <span>🔥</span> QUENTE
+        </div>
+        <div style="font-size:10px;font-weight:600;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:6px">CUSTO POR LEAD</div>
+        <div class="bn-val" style="font-size:48px;line-height:1">R$ 1,62</div>
+        <div style="margin:12px 0 10px;height:4px;background:var(--surface);border-radius:2px;overflow:hidden">
+          <div style="width:79.4%;height:100%;background:#ef4444;border-radius:2px"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px;font-size:12px">
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Leads pagos</span><b>20.789</b></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Investido</span><b>R$ 33.655,46</b></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">% do total</span><b>79.4%</b></div>
+        </div>
+      </div>
+    </div>
+
     <div class="section-label">Funil de Conversao</div>
     <div style="margin-bottom:24px">
       <div class="card" style="padding:28px 40px;max-width:520px;margin:0 auto">
@@ -1223,23 +1260,27 @@ function setDb2OrigemMode(mode){
   _db2OrigemMode=mode;
   var k=window._dbKiwify;
   if(!k||!k._rows) return;
-  var rows=k._rows.filter(function(r){var st=(r['order_status']||'').toLowerCase();return st==='paid'||st==='paided';});
+  // Filtrar apenas os 3 produtos do lançamento + status paid
+  var rows=k._rows.filter(function(r){
+    var st=(r['order_status']||'').toLowerCase();
+    var prod=(r['Product_product_name']||'').trim();
+    return (st==='paid'||st==='paided') && TODOS_PRODUTOS.indexOf(prod)>=0;
+  });
+  var CANAL_CORES_D={'YouTube':'#ef4444','WhatsApp':'#16a34a','Instagram':'#8b5cf6','Comercial':'#6b7280','Outros':'#d4a800','Sem Tracking':'#4b5563'};
   var map={};
   rows.forEach(function(r){
     var src=(r['TrackingParameters_utm_source']||r['utm_source']||'').trim();
     var med=(r['TrackingParameters_utm_medium']||r['utm_medium']||'').trim();
     var v;
     if (mode==='origem') {
-      // Agrupa por categoria de plataforma (não pelo nome bruto)
-      v = srcToPlat(src);
-      if (v==='Outros') v='Sem Tracking';
+      v = srcToCanal(src);
     } else {
       v = med || 'Sem Tracking';
     }
     map[v]=(map[v]||0)+1;
   });
   var entries=Object.entries(map).sort(function(a,b){return b[1]-a[1];}).slice(0,6);
-  var COLS=['#d4a800','#16a34a','#3b82f6','#8b5cf6','#ef4444','#f97316'];
+  var COLS=entries.map(function(e){return CANAL_CORES_D[e[0]]||'#d4a800';});
   var lbls=entries.map(function(e){return e[0];});
   var vals=entries.map(function(e){return e[1];});
   var ctxD=document.getElementById('db2OrigemDonut');
