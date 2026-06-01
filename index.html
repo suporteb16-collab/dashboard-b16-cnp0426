@@ -857,24 +857,55 @@ input[type=date]{background:transparent;border:none;color:#ccc;font-family:'DM S
 
     </div>
 
-    <div class="section-label">Resultados Gerais</div>
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px">
-      <div class="bn"><div class="bn-lbl">Faturamento Total</div><div class="bn-val" id="db-fat-total">-</div><div class="bn-sub" id="db-fat-sub">-</div></div>
-      <div class="bn"><div class="bn-lbl">Vendas Totais</div><div class="bn-val" id="db-vend-total">-</div><div class="bn-sub" id="db-vend-sub">-</div></div>
-      <div class="bn"><div class="bn-lbl">Invest. Total c/ Imposto</div><div class="bn-val" id="db-inv-ci">-</div><div class="bn-sub">Meta + Imposto + League</div><div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:3px"><div style="display:flex;justify-content:space-between;font-size:10px"><span style="color:var(--muted)">Meta s/ imposto</span><span>R$&nbsp;63.657,96</span></div><div style="display:flex;justify-content:space-between;font-size:10px"><span style="color:var(--muted)">Imposto Meta</span><span style="color:#ef4444">R$&nbsp;7.829,65</span></div><div style="display:flex;justify-content:space-between;font-size:10px"><span style="color:var(--muted)">League Leads</span><span>R$&nbsp;11.700,00</span></div></div></div>
-      <div class="bn"><div class="bn-lbl">ROAS Geral</div><div class="bn-val" id="db-roas">-</div><div class="bn-sub" id="db-roas-sub">-</div></div>
+    <div class="section-label">Cromador Pro 2.0 &mdash; Visao Geral de Vendas</div>
+    <div class="grid-vendas-top">
+      <div class="bn" style="position:relative">
+        <div class="bn-lbl">Vendas Confirmadas</div>
+        <div class="bn-val" id="db3Vendas" style="font-size:44px">-</div>
+        <div id="db3VendasSub" style="font-size:11px;color:var(--muted);margin-top:4px">-</div>
+        <canvas id="db3VendasDonut" width="52" height="52" style="position:absolute;top:36px;right:12px"></canvas>
+      </div>
+      <div class="bn" style="position:relative">
+        <div class="bn-lbl">Faturamento Total (3 Produtos)</div>
+        <div class="bn-val" id="db3Fat" style="font-size:32px">-</div>
+        <div id="db3FatSub" style="font-size:11px;color:var(--muted);margin-top:4px">-</div>
+        <canvas id="db3FatDonut" width="52" height="52" style="position:absolute;top:36px;right:12px"></canvas>
+      </div>
+      <div class="bn" style="position:relative">
+        <div class="bn-lbl">ROAS</div>
+        <div class="bn-val" id="db3Roas" style="font-size:44px">-</div>
+        <canvas id="db3RoasDonut" width="52" height="52" style="position:absolute;top:36px;right:12px"></canvas>
+      </div>
     </div>
-
-
-
-    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:12px">
-      <div class="bn"><div class="bn-lbl">Leads Totais</div><div class="bn-val">28.381</div><div class="bn-sub">LP + Forms ate 28/05</div><div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:3px"><div style="display:flex;justify-content:space-between;font-size:10px"><span style="color:var(--muted)">Landing Page</span><span>15.685</span></div><div style="display:flex;justify-content:space-between;font-size:10px"><span style="color:var(--muted)">Forms Meta</span><span>12.696</span></div></div></div>
-      <div class="bn"><div class="bn-lbl">Leads Compradores</div><div class="bn-val">532</div><div class="bn-sub">1,87% da base total</div></div>
-    </div>
-
-    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:24px">
-      <div class="bn"><div class="bn-lbl">CPL</div><div class="bn-val" id="db-cpl">-</div><div class="bn-sub">invest. Meta / leads LP</div></div>
-      <div class="bn"><div class="bn-lbl">CAC Geral</div><div class="bn-val" id="db-cac">-</div><div class="bn-sub">invest. total / compradores</div></div>
+    <div class="grid-vendas-bot" style="grid-template-columns:repeat(5,1fr)">
+      <div class="bn">
+        <div class="bn-lbl">Investido em RMKT</div>
+        <div class="bn-val" id="db3Rmkt" style="font-size:28px">-</div>
+        <div class="bn-sub">Campanhas Meta Ads [RMKT]</div>
+      </div>
+      <div class="bn">
+        <div class="bn-lbl">CAC</div>
+        <div class="bn-val" id="db3CAC" style="font-size:36px">-</div>
+      </div>
+      <div class="bn">
+        <div class="bn-lbl">Leads Compradores</div>
+        <div class="bn-val" id="db3LeadsComp" style="font-size:36px">532</div>
+        <div class="bn-sub">de 28.381 leads totais</div>
+      </div>
+      <div class="bn">
+        <div class="bn-lbl">Invest. Total c/ Imposto</div>
+        <div class="bn-val" id="db3InvestTotal" style="font-size:22px">-</div>
+        <div style="margin-top:6px;padding-top:6px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:2px">
+          <div style="display:flex;justify-content:space-between;font-size:10px"><span style="color:var(--muted)">Meta s/ imposto</span><span>R$&nbsp;63.657,96</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:10px"><span style="color:var(--muted)">Imposto Meta</span><span style="color:#ef4444">R$&nbsp;7.829,65</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:10px"><span style="color:var(--muted)">League Leads</span><span>R$&nbsp;10.392,41</span></div>
+        </div>
+      </div>
+      <div class="bn">
+        <div class="bn-lbl">Clientes c/ Recompra</div>
+        <div class="bn-val" id="db3Recompra" style="font-size:44px">-</div>
+        <div class="bn-sub" id="db3RecompraSub">ja estavam na base</div>
+      </div>
     </div>
 
     <div class="section-label">Funil de Conversao</div>
@@ -893,49 +924,45 @@ input[type=date]{background:transparent;border:none;color:#ccc;font-family:'DM S
     <div class="section-label">Investimento por Dia &mdash; Meta Ads</div>
     <div class="card" style="padding:18px;margin-bottom:24px"><canvas id="db-g-gasto" height="100"></canvas></div>
 
-    <div class="section-label">Analise de Vendas por Origem</div>
-    <div style="display:flex;gap:10px;margin-bottom:12px;align-items:center">
-      <span style="font-size:12px;color:var(--muted)">Dimensao:</span>
-      <select id="db-dim" onchange="renderDbDim()" style="font-size:12px;padding:6px 12px;border-radius:7px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer">
-        <option value="utm_source">Plataforma (utm_source)</option>
-        <option value="utm_medium">Publico (utm_medium)</option>
-        <option value="utm_content">Criativo (utm_content)</option>
-        <option value="utm_campaign">Campanha (utm_campaign)</option>
-      </select>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 2fr;gap:16px;margin-bottom:12px">
-      <div class="card" style="padding:18px">
-        <div class="card-title" id="db-pie-title">Vendas por Plataforma</div>
-        <canvas id="db-g-pie" height="160"></canvas>
-        <div id="db-pie-leg" style="margin-top:8px;font-size:11px"></div>
+    <div class="section-label">Por Origem de Venda</div>
+    <div class="grid-origem">
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="card" style="padding:20px"><div class="card-title">Por utm_source</div><div id="db2OrigemSource"></div></div>
+        <div class="card" style="padding:20px"><div class="card-title">Por utm_content (Criativo)</div><div id="db2OrigemContent"></div></div>
+        <div class="card" style="padding:20px"><div class="card-title">Por utm_medium</div><div id="db2OrigemMedium"></div></div>
       </div>
-      <div class="card" style="padding:18px">
-        <div class="card-title" id="db-bar-title">Faturamento por Plataforma</div>
-        <canvas id="db-g-bar" height="160"></canvas>
+      <div class="card" style="padding:20px;display:flex;flex-direction:column">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <div class="card-title" id="db2OrigemDonutTitle" style="margin:0">Distribuicao por Origem</div>
+          <div style="display:flex;gap:6px">
+            <button id="db2BtnOrigem" onclick="setDb2OrigemMode('origem')"
+              style="font-size:10px;font-weight:700;padding:4px 10px;border-radius:20px;border:1px solid var(--yellow);background:var(--yellow);color:#000;cursor:pointer">Origem</button>
+            <button id="db2BtnPublico" onclick="setDb2OrigemMode('publico')"
+              style="font-size:10px;font-weight:700;padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer">Publico</button>
+          </div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center">
+          <canvas id="db2OrigemDonut" style="max-height:200px;max-width:200px"></canvas>
+          <div id="db2OrigemDonutLegend" style="margin-top:16px;width:100%"></div>
+        </div>
       </div>
-    </div>
-    <div class="card" style="padding:18px;margin-bottom:24px;overflow-x:auto">
-      <table style="width:100%;border-collapse:collapse;font-size:12px">
-        <thead id="db-tbl-head"></thead>
-        <tbody id="db-tbl-body"></tbody>
-      </table>
     </div>
 
-    <div class="section-label">Ranking de Vendas por Vendedora</div>
-    <div class="card" style="padding:18px;margin-bottom:24px;overflow-x:auto">
-      <table style="width:100%;border-collapse:collapse;font-size:13px" id="db-vend-table">
-        <thead>
-          <tr style="border-bottom:2px solid var(--border)">
-            <th style="padding:10px 8px;color:var(--muted);font-weight:600;text-align:left">#</th>
-            <th style="padding:10px 8px;color:var(--muted);font-weight:600;text-align:left">VENDEDORA</th>
-            <th style="padding:10px 8px;color:var(--muted);font-weight:600;text-align:right">VENDAS</th>
-            <th style="padding:10px 8px;color:var(--muted);font-weight:600;text-align:right">FATURAMENTO</th>
-            <th style="padding:10px 8px;color:var(--muted);font-weight:600;text-align:right">% DO TOTAL</th>
-          </tr>
-        </thead>
-        <tbody id="db-vend-body"></tbody>
-      </table>
+    <div class="section-label">Vendas por Plataforma</div>
+    <div class="grid-plataforma" style="align-items:stretch;margin-bottom:24px">
+      <div class="card" style="padding:20px">
+        <div class="card-title">Distribuicao</div>
+        <canvas id="db2PlatDonut" height="200"></canvas>
+        <div id="db2PlatLegend" style="margin-top:12px"></div>
+      </div>
+      <div class="card" style="padding:20px">
+        <div class="card-title">Faturamento por Plataforma</div>
+        <canvas id="db2PlatBar" height="140"></canvas>
+      </div>
     </div>
+
+    <div class="section-label">Time de Vendas</div>
+    <div class="card" style="padding:20px;margin-bottom:24px"><canvas id="db2ChartVendedores" height="120"></canvas></div>
 
         <div class="section-label">Analise de Criativos &mdash; Meta Ads</div>
     <div class="card" style="padding:18px;margin-bottom:24px;overflow-x:auto">
@@ -959,12 +986,183 @@ input[type=date]{background:transparent;border:none;color:#ccc;font-family:'DM S
 
 <script>
 
+
+// === DEBRIEFING RENDER DB2/DB3 ===
+function renderDebriefingVendas(){
+  var k=window._dbKiwify;
+  var m=window._lastMeta||{investTotal:63657.96};
+  if(!k) return;
+
+  // Calcular valores
+  var vCrom=k.vendas||0;
+  var fCrom=k.fat||0;
+  var fPint=k.bumpFatProd?((k.bumpFatProd['Pintura Eletrostatica na Pratica 1.0']||k.bumpFatProd['Pintura Eletrost\u00e1tica na Pr\u00e1tica 1.0'])||0):0;
+  var fGalv=k.bumpFatProd?(k.bumpFatProd['Galvanizado Pro -1.0']||0):0;
+  var vBump=k.bumpVendas||0;
+  var fatTotal=fCrom+fPint+fGalv;
+  var invCI=63657.96+7829.65+10392.41;
+  var roas=invCI>0?fatTotal/invCI:0;
+  var cac=532>0?invCI/532:0;
+
+  // Recompra: clientes que ja compraram antes (emailsSet cruzado)
+  var recompra=k.emailsSet?0:0; // calculado via processKiwify
+  var recompraVal=window._dbRecompra||62;
+
+  function s(id,v){var e=document.getElementById(id);if(e)e.textContent=v;}
+  s('db3Vendas',(vCrom+vBump).toLocaleString('pt-BR'));
+  s('db3VendasSub',vCrom+' Cromador + '+vBump+' Order Bumps');
+  s('db3Fat',fBRL(fatTotal));
+  s('db3FatSub',fBRL(fCrom)+' Cromador + '+fBRL(fPint+fGalv)+' Bumps');
+  s('db3Roas',roas.toFixed(2));
+  s('db3CAC',fBRL(cac));
+  s('db3InvestTotal',fBRL(invCI));
+  s('db3Recompra',recompraVal);
+  s('db3RecompraSub',recompraVal+' clientes com cross-sell');
+
+  // Donuts (reutilizar mkDonutMeta existente)
+  var metaRoas=roas; var metaFat=fatTotal;
+  mkDonutMeta('db3VendasDonut', vCrom+vBump, 565, '#16a34a');
+  mkDonutMeta('db3FatDonut', fatTotal, 450000, '#16a34a');
+  mkDonutMeta('db3RoasDonut', Math.min(roas/5,1)*5, 5, '#16a34a');
+
+  // RMKT
+  var spendRmkt=0;
+  cachedMeta.forEach(function(r){
+    var camp=(r['Campaign Name']||'').toUpperCase();
+    if(camp.indexOf('[RMKT]')>=0||camp.indexOf('RMKT')>=0){
+      spendRmkt+=parseFloat((r['Spend (Cost, Amount Spent)']||'0').replace(/\./g,'').replace(',','.'))||0;
+    }
+  });
+  s('db3Rmkt',fBRL(spendRmkt));
+}
+
+function renderDb2Origem(){
+  var k=window._dbKiwify;
+  if(!k||!k._rows) return;
+  // Reutilizar as mesmas funções de renderização da aba Vendas
+  // mas apontando para os IDs db2
+  var rows=k._rows.filter(function(r){
+    var st=(r['order_status']||'').toLowerCase();
+    return st==='paid'||st==='paided';
+  });
+
+  // Por utm_source
+  var srcMap={};
+  rows.forEach(function(r){
+    var v=(r['TrackingParameters_utm_source']||r['utm_source']||'').trim()||'Organico';
+    srcMap[v]=(srcMap[v]||0)+1;
+  });
+  renderOrigemList('db2OrigemSource',srcMap);
+
+  // Por utm_content
+  var cntMap={};
+  rows.forEach(function(r){
+    var v=(r['TrackingParameters_utm_content']||r['utm_content']||'').trim()||'Sem tracking';
+    cntMap[v]=(cntMap[v]||0)+1;
+  });
+  renderOrigemList('db2OrigemContent',cntMap);
+
+  // Por utm_medium
+  var medMap={};
+  rows.forEach(function(r){
+    var v=(r['TrackingParameters_utm_medium']||r['utm_medium']||'').trim()||'Sem tracking';
+    medMap[v]=(medMap[v]||0)+1;
+  });
+  renderOrigemList('db2OrigemMedium',medMap);
+
+  // Donut origem
+  setDb2OrigemMode('origem');
+
+  // Plataforma donut + bar
+  var platEntries=Object.entries(k.byPlataforma||{}).sort(function(a,b){return b[1].vendas-a[1].vendas;});
+  var COLS=['#d4a800','#16a34a','#3b82f6','#8b5cf6','#ef4444','#f97316'];
+  var platLbls=platEntries.map(function(e){return e[0];});
+  var platVals=platEntries.map(function(e){return e[1].vendas;});
+  var platFat=platEntries.map(function(e){return e[1].fat;});
+  var ctxPD=document.getElementById('db2PlatDonut');
+  if(ctxPD){
+    if(ctxPD._ch)ctxPD._ch.destroy();
+    ctxPD._ch=new Chart(ctxPD,{type:'doughnut',data:{labels:platLbls,datasets:[{data:platVals,backgroundColor:COLS,borderColor:'#fff',borderWidth:2}]},options:{cutout:'60%',plugins:{legend:{display:false}}}});
+  }
+  var ctxPB=document.getElementById('db2PlatBar');
+  if(ctxPB){
+    if(ctxPB._ch)ctxPB._ch.destroy();
+    ctxPB._ch=new Chart(ctxPB,{type:'bar',data:{labels:platLbls,datasets:[{data:platFat,backgroundColor:COLS,borderRadius:4}]},options:{plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{grid:G,beginAtZero:true,ticks:{callback:function(v){return 'R$'+Math.round(v/1000)+'k';}}}}}});
+  }
+  var legEl=document.getElementById('db2PlatLegend');
+  if(legEl){
+    var tot=platVals.reduce(function(a,b){return a+b;},0)||1;
+    legEl.innerHTML=platEntries.map(function(e,i){
+      return '<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:11px"><div style="display:flex;align-items:center;gap:5px"><div style="width:8px;height:8px;border-radius:2px;background:'+COLS[i]+'"></div><span>'+e[0]+'</span></div><span><b>'+e[1].vendas+'</b> <span style="color:var(--muted)">('+( e[1].vendas/tot*100).toFixed(1)+'%)</span></span></div>';
+    }).join('');
+  }
+
+  // Gráfico vendedores
+  var vends=['Larissa','Marcela','Kamilly','Ray','Paula'];
+  var vendVals=[k.byVendedor.larissa||0,k.byVendedor.marcela||0,k.byVendedor.kamilly||0,k.byVendedor.ray||0,k.byVendedor.paula||0];
+  var VCOLS=['#d4a800','#16a34a','#3b82f6','#e1306c','#8b5cf6'];
+  mkChart('db2ChartVendedores',{type:'bar',data:{labels:vends,datasets:[{data:vendVals,backgroundColor:VCOLS,borderRadius:8}]},options:{plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{grid:G,beginAtZero:true}}}});
+}
+
+function renderOrigemList(elId, map){
+  var el=document.getElementById(elId);
+  if(!el) return;
+  var entries=Object.entries(map).sort(function(a,b){return b[1]-a[1];}).slice(0,8);
+  var tot=entries.reduce(function(s,e){return s+e[1];},0)||1;
+  el.innerHTML=entries.map(function(e){
+    var pct=(e[1]/tot*100).toFixed(1);
+    return '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--border);font-size:11px">'
+      +'<div style="flex:1;color:var(--muted)">'+e[0]+'</div>'
+      +'<div style="width:80px;background:var(--surface);border-radius:3px;height:6px;overflow:hidden"><div style="height:100%;background:var(--yellow);width:'+pct+'%"></div></div>'
+      +'<div style="min-width:28px;text-align:right;font-weight:700">'+e[1]+'</div>'
+      +'<div style="min-width:36px;text-align:right;color:var(--muted)">'+pct+'%</div>'
+      +'</div>';
+  }).join('');
+}
+
+var _db2OrigemMode='origem';
+function setDb2OrigemMode(mode){
+  _db2OrigemMode=mode;
+  var k=window._dbKiwify;
+  if(!k||!k._rows) return;
+  var rows=k._rows.filter(function(r){var st=(r['order_status']||'').toLowerCase();return st==='paid'||st==='paided';});
+  var map={};
+  rows.forEach(function(r){
+    var v=mode==='origem'
+      ?(r['TrackingParameters_utm_source']||r['utm_source']||'Organico').trim()
+      :(r['TrackingParameters_utm_medium']||r['utm_medium']||'Sem tracking').trim();
+    map[v]=(map[v]||0)+1;
+  });
+  var entries=Object.entries(map).sort(function(a,b){return b[1]-a[1];}).slice(0,6);
+  var COLS=['#d4a800','#16a34a','#3b82f6','#8b5cf6','#ef4444','#f97316'];
+  var lbls=entries.map(function(e){return e[0];});
+  var vals=entries.map(function(e){return e[1];});
+  var ctxD=document.getElementById('db2OrigemDonut');
+  if(ctxD){
+    if(ctxD._ch)ctxD._ch.destroy();
+    ctxD._ch=new Chart(ctxD,{type:'doughnut',data:{labels:lbls,datasets:[{data:vals,backgroundColor:COLS,borderWidth:2}]},options:{cutout:'58%',plugins:{legend:{display:false}}}});
+  }
+  var titEl=document.getElementById('db2OrigemDonutTitle');
+  if(titEl) titEl.textContent=mode==='origem'?'Distribuicao por Origem':'Distribuicao por Publico';
+  var legEl=document.getElementById('db2OrigemDonutLegend');
+  var tot=vals.reduce(function(a,b){return a+b;},0)||1;
+  if(legEl) legEl.innerHTML=entries.map(function(e,i){
+    return '<div style="display:flex;justify-content:space-between;padding:2px 0;font-size:11px"><div style="display:flex;align-items:center;gap:5px"><div style="width:8px;height:8px;border-radius:2px;background:'+COLS[i]+'"></div><span>'+e[0]+'</span></div><b>'+e[1]+'</b></div>';
+  }).join('');
+  // Botoes
+  var bO=document.getElementById('db2BtnOrigem');
+  var bP=document.getElementById('db2BtnPublico');
+  if(bO){bO.style.background=mode==='origem'?'var(--yellow)':'transparent';bO.style.color=mode==='origem'?'#000':'var(--muted)';}
+  if(bP){bP.style.background=mode==='publico'?'var(--yellow)':'transparent';bP.style.color=mode==='publico'?'#000':'var(--muted)';}
+}
+// === /DEBRIEFING RENDER DB2/DB3 ===
+
 // === DEBRIEFING ===
 var DB_LDIAS=["08/04", "09/04", "10/04", "11/04", "12/04", "13/04", "14/04", "15/04", "16/04", "17/04", "18/04", "19/04", "20/04", "21/04", "22/04", "23/04", "24/04", "25/04", "26/04", "27/04", "28/04", "29/04", "30/04", "01/05", "02/05", "03/05", "04/05", "05/05", "06/05", "07/05", "08/05", "09/05", "10/05", "11/05", "12/05"];
 var DB_LVALS=[126, 143, 287, 417, 634, 669, 540, 609, 669, 688, 635, 964, 867, 304, 796, 1224, 1246, 489, 737, 1088, 1462, 1486, 1474, 1450, 1316, 1704, 453, 1324, 427, 400, 744, 755, 661, 307, 8];
 var DB_CVALS=[7, 7, 7, 11, 9, 21, 10, 13, 13, 11, 10, 9, 17, 7, 11, 13, 21, 10, 6, 15, 17, 17, 21, 25, 20, 28, 14, 24, 8, 14, 26, 30, 28, 25, 15];
 var DB_CRIATIVOS=[{"name": "007 - VID - Fala chefia", "thumb": "https://scontent.xx.fbcdn.net/v/t15.5256-10/663361433_1262742842666426_7715124116633011055_n.jpg?_nc_cat=104&ccb=1-7&_nc_ohc=REs6M-MQOUkQ7kNvwEprXRc&_nc_oc=AdqHVLQh0jTTsw6S5JWATYZRQpN12E5xX-4vw_EREuWXQVSEAlc_FWX63KWKC0HHWQM&_nc_zt=23&_nc_ht=scontent.xx&edm=AOgd6ZUEAAAA&_nc_gid=z9gmKpKcOoYvNsA4MqmuBw&_nc_tpa=Q5bMBQGSR5p-6HdW3IpFQUhCkvvXLYENKwE2IOAtJk6eY81i5yUUFgq911LqzusXZtbsJMEDQSai3zBG&stp=c0.5000x0.5000f_dst-emg0_q75_tt6&ur=a86139&_nc_sid=58080a&oh=00_Af_UCgStoB1Bwh6OY-f6z0JfPBrRnWP_hLPxwVgzYK_HJA&oe=6A21E8F2", "invest": 5177.55, "vendas": 99, "fat": 78903.0, "cac": 52.3, "roas": 15.24}, {"name": "003 - VID - Vamos entrar com a peca no banho niqueo", "thumb": "https://scontent.xx.fbcdn.net/v/t15.5256-10/664282958_1505277307848461_4597266625531074571_n.jpg?_nc_cat=100&ccb=1-7&_nc_ohc=MiJ3Y0p31L8Q7kNvwEp9wAQ&_nc_oc=AdpTbYF0JJSARHxinkEJS3x8IFFIZhzQCwY3Fi1SZCJOBwyiBaHqnlU0eDM0qX91Y6A&_nc_zt=23&_nc_ht=scontent.xx&edm=AOgd6ZUEAAAA&_nc_gid=z9gmKpKcOoYvNsA4MqmuBw&_nc_tpa=Q5bMBQGtrrg6XusotfavIOBGZmu7IzzDqqgv-BpDJcsSSiItM1rX7RO4HNcsuypDS9eywBtyVbVLqhE1&stp=c0.5000x0.5000f_dst-emg0_q75_tt6&ur=a86139&_nc_sid=58080a&oh=00_Af-TQZq_VLaNShWcJPTOZIrbfVbfMtFnaxjN01y9Nhm5iA&oe=6A21F790", "invest": 2850.55, "vendas": 81, "fat": 64557.0, "cac": 35.19, "roas": 22.65}, {"name": "006 - VID - Ja conhece o processo de cromo", "thumb": "https://scontent.xx.fbcdn.net/v/t15.5256-10/666685895_987019667157830_8225322797515108174_n.jpg?_nc_cat=109&ccb=1-7&_nc_ohc=h489gLwxh8MQ7kNvwE9uHhz&_nc_oc=AdpflQo7_Tk7qnIKO2mNtWSUln86LoEGM09YV_p6VHwAoCek2G0rHc75LxZesgfOhEM&_nc_zt=23&_nc_ht=scontent.xx&edm=AOgd6ZUEAAAA&_nc_gid=z9gmKpKcOoYvNsA4MqmuBw&_nc_tpa=Q5bMBQGmh8mh-5E1BNkwDvADgcp570_WQnlsGfcAOJsc7D_CTtTdMtRx1KoeYysMH28uWRaT9D-U4QCh&stp=c0.5000x0.5000f_dst-emg0_q75_tt6&ur=a86139&_nc_sid=58080a&oh=00_Af9WsiC_-Wmpp5o88NFMnvCZp9dwQUKXUHRexr7Ba31KVw&oe=6A21EE06", "invest": 4064.79, "vendas": 70, "fat": 55790.0, "cac": 58.07, "roas": 13.73}, {"name": "002 - VID - Por que poucos profissionais na cromagem", "thumb": "https://scontent.xx.fbcdn.net/v/t15.5256-10/667833413_785445331032256_7675575428183802069_n.jpg?_nc_cat=100&ccb=1-7&_nc_ohc=U4SDYWYjUAgQ7kNvwFpF1K-&_nc_oc=AdpYixg2-RgVJa1MAa3BT4IRFv7G0j-K4oXdyK6fUzvZnIyTWWkciQ4G7wiVQ9Tj4H4&_nc_zt=23&_nc_ht=scontent.xx&edm=AOgd6ZUEAAAA&_nc_gid=z9gmKpKcOoYvNsA4MqmuBw&_nc_tpa=Q5bMBQHsPOd8fWKfkqXzPEbCer2MruwgBY9jX6EBX2vqE_ytpC6DBpVvyniOaVEulPLnacXsp9d-8fAa&stp=c0.5000x0.5000f_dst-emg0_q75_tt6&ur=a86139&_nc_sid=58080a&oh=00_Af-n3dnWKSxbVryLkKWMIetQ7uT4emUmAh7WhA1uR0kwbA&oe=6A21DC84", "invest": 1264.74, "vendas": 28, "fat": 22316.0, "cac": 45.17, "roas": 17.64}, {"name": "001 - VID - Cromamos a maior tampa de motor do mundo", "thumb": "https://scontent.xx.fbcdn.net/v/t15.5256-10/667961545_1995539471047398_7320014931185098069_n.jpg?_nc_cat=104&ccb=1-7&_nc_ohc=MvA1ebSUr7MQ7kNvwEoiASt&_nc_oc=AdoORBClnlgWsmVDXVXfzqO_CQ5d_5jjPe8lXJqsWYHSsCT1Kad2t5Ifm07wNUGnILM&_nc_zt=23&_nc_ht=scontent.xx&edm=AOgd6ZUEAAAA&_nc_gid=z9gmKpKcOoYvNsA4MqmuBw&_nc_tpa=Q5bMBQHQNa5164yZ_Q-HIpN3lJ3Anz59cAc8jcQcpp7mwL2Fo93vYpZHOZCUiOulkB5E15WBGD9uQNtu&stp=c0.5000x0.5000f_dst-emg0_q75_tt6&ur=a86139&_nc_sid=58080a&oh=00_Af8iZ1QEbG4-9hdqY42dvOdD6HxkJmzdBPWZ7VRRnuWcHg&oe=6A21D91D", "invest": 1914.73, "vendas": 4, "fat": 3188.0, "cac": 478.68, "roas": 1.66}, {"name": "026 - VID - Fala galera", "thumb": "https://scontent.xx.fbcdn.net/v/t15.5256-10/673168869_900633473019243_7249375215869632325_n.jpg?_nc_cat=111&ccb=1-7&_nc_ohc=RfASiiTylq0Q7kNvwGZsyKH&_nc_oc=Adq46pNrEaMJDJjwYo50V_Uul0dBqnH2JESmUTep9OegjpoyEBNFSeEp1oW0rQ9jTOs&_nc_zt=23&_nc_ht=scontent.xx&edm=AOgd6ZUEAAAA&_nc_gid=z9gmKpKcOoYvNsA4MqmuBw&_nc_tpa=Q5bMBQE0-yKhFzCSBR_DXzKiQsFelfOGv8c-Y2aJ5cqlAMNHWjYgecjipwHEASbKY_lVyglk2mCB7X9L&stp=c0.5000x0.5000f_dst-emg0_q75_tt6&ur=a86139&_nc_sid=58080a&oh=00_Af-Nca_DDod_CHe5rzwW6Eq4_ccXoCXzz28LDUnH9b-YtA&oe=6A21E7D3", "invest": 3026.61, "vendas": 4, "fat": 3188.0, "cac": 756.65, "roas": 1.05}, {"name": "004 - VID - Olha o que esse cara fez com a peca", "thumb": "https://scontent.xx.fbcdn.net/v/t15.5256-10/669359063_1205542194784992_690859660016688255_n.jpg?_nc_cat=111&ccb=1-7&_nc_ohc=imT9ztMcXdoQ7kNvwEDEBHg&_nc_oc=AdrBGWsMQ8K9obkBPIP7sTft-LiA2jRI-97rYKJ27isc85DRHs-A6KvfFN60_a4l1Vc&_nc_zt=23&_nc_ht=scontent.xx&edm=AOgd6ZUEAAAA&_nc_gid=z9gmKpKcOoYvNsA4MqmuBw&_nc_tpa=Q5bMBQFnMGPcMs5QzcQjbA-Uj91H8BMGQMLOllTrV_lW5rMFV-6zZsbR5TBp-91XK37D2gtl-b5hOzE-&stp=c0.5000x0.5000f_dst-emg0_q75_tt6&ur=a86139&_nc_sid=58080a&oh=00_Af_v6JTnwhgF82F5HSRjpGEHTTKdUB7ZT1wI0-OR3f-WFQ&oe=6A21D8FF", "invest": 315.43, "vendas": 1, "fat": 797.0, "cac": 315.43, "roas": 2.53}, {"name": "009 - VID - Entrou no removedor de tinta", "thumb": "https://scontent.xx.fbcdn.net/v/t15.5256-10/668677897_1711617493552023_2878519439763888118_n.jpg?_nc_cat=110&ccb=1-7&_nc_ohc=9rj6voIid6cQ7kNvwHREH6_&_nc_oc=Ado9YJvyD-TxD5E3tshjnBFs28nIuCIBYWBVx5kX_Wa1_2Pwlrd3KJ60cLPmPdPErcs&_nc_zt=23&_nc_ht=scontent.xx&edm=AOgd6ZUEAAAA&_nc_gid=z9gmKpKcOoYvNsA4MqmuBw&_nc_tpa=Q5bMBQFlQ5kgm2RbZGPMKSeZaO4aPt1HGumTLcFE3tlKQbIqtxz2m5RbIyNUmgDxWKof4vKtI0n0Wpxj&stp=c0.5000x0.5000f_dst-emg0_q75_tt6&ur=a86139&_nc_sid=58080a&oh=00_Af96yC_KIUPuz8qbhlpuG9KzC9Q4M4tNpLxJQRDN9y135Q&oe=6A21F0F6", "invest": 3834.05, "vendas": 0, "fat": 0.0, "cac": 0.0, "roas": 0.0}, {"name": "004 - VID - Dia vinte e cinco V2", "thumb": "https://scontent.xx.fbcdn.net/v/t15.5256-10/702450389_2158035688328790_7450952346883134552_n.jpg?_nc_cat=102&ccb=1-7&_nc_ohc=G1Req5T-HoQQ7kNvwHnSYPp&_nc_oc=Adr2Kw392baeg0FICvFQp_1JJL4ux5nceKLh5YvSZJauEevClw-rCLqayXjLED1ByAw&_nc_zt=23&_nc_ht=scontent.xx&edm=AOgd6ZUEAAAA&_nc_gid=z9gmKpKcOoYvNsA4MqmuBw&_nc_tpa=Q5bMBQHRK6XV_SNVRyRiX8fbMHN2nJV6FWWFmVKmLM_Cg5JHyAGY1hn1Nnb_iEOH7O5CMfdKE_q5SZuy&stp=c0.5000x0.5000f_dst-emg0_q75_tt6&ur=a86139&_nc_sid=58080a&oh=00_Af-0h4kfPfUaBuPsqvUO5pdvCyrkzljXgpFqLzTNxmR4Ug&oe=6A21E41C", "invest": 3770.07, "vendas": 0, "fat": 0.0, "cac": 0.0, "roas": 0.0}, {"name": "Post do Instagram: Quer aprender o processo? Siga...", "thumb": "https://scontent.xx.fbcdn.net/v/t15.5256-10/652202986_2363529314071554_6981488136829206344_n.jpg?_nc_cat=105&ccb=1-7&_nc_ohc=BwLPWvMuW-MQ7kNvwH3075W&_nc_oc=AdqbPRfDA42qQF7oYrHA11R5oVoNhNXNwN1x2-iBG4dnbDip8yu9KRcNEZZoMoXqW_E&_nc_zt=23&_nc_ht=scontent.xx&edm=AOgd6ZUEAAAA&_nc_gid=z9gmKpKcOoYvNsA4MqmuBw&_nc_tpa=Q5bMBQEPW_Bz273b22DlIYw3rJQ0gGDP0kFS8aZwgbj8ZcnJPthlGBBih_tiNuoVZTWpuWT8wn00vkaV&stp=c0.5000x0.5000f_dst-emg0_q75_tt6&ur=a7ce7f&_nc_sid=58080a&oh=00_Af_xwkiXqqLJUmxyK4GItL2Tw6__bBU1ArdC33MvCe2WgA&oe=6A22028D", "invest": 2461.59, "vendas": 0, "fat": 0.0, "cac": 0.0, "roas": 0.0}, {"name": "Post do Instagram: Banho de Cromo. Curso 100%...", "thumb": "https://scontent.xx.fbcdn.net/v/t15.5256-10/649198583_897729529775138_9164833369636075360_n.jpg?_nc_cat=111&ccb=1-7&_nc_ohc=2Bgesncau90Q7kNvwGQRwYp&_nc_oc=AdoLAcU7o_VyL5-wGyKY0X9M2-WqMqI8kMnVAD3_2gu5hgdKqHiMfL6vdlAhskoVnXY&_nc_zt=23&_nc_ht=scontent.xx&edm=AOgd6ZUEAAAA&_nc_gid=z9gmKpKcOoYvNsA4MqmuBw&_nc_tpa=Q5bMBQHW0rLtlXIMx_dVB60RZWxGRoavwqYg-SavHp4Ds7Tl9BmwteNhk_KXUCRa09ed_nYEvc0cSCU6&stp=c0.5000x0.5000f_dst-emg0_q75_tt6&ur=a7ce7f&_nc_sid=58080a&oh=00_Af-cxJebM36iOkJqea3cnonrAHvKR4SyvjXsITcLd4CVrQ&oe=6A220346", "invest": 2459.54, "vendas": 0, "fat": 0.0, "cac": 0.0, "roas": 0.0}, {"name": "004 - VID - Dia vinte e cinco de maio V2", "thumb": "https://scontent.xx.fbcdn.net/v/t15.5256-10/702450389_2158035688328790_7450952346883134552_n.jpg?_nc_cat=102&ccb=1-7&_nc_ohc=G1Req5T-HoQQ7kNvwHnSYPp&_nc_oc=Adr2Kw392baeg0FICvFQp_1JJL4ux5nceKLh5YvSZJauEevClw-rCLqayXjLED1ByAw&_nc_zt=23&_nc_ht=scontent.xx&edm=AOgd6ZUEAAAA&_nc_gid=z9gmKpKcOoYvNsA4MqmuBw&_nc_tpa=Q5bMBQEjj1X-XKlhblxRn9K-LdD4DEnIen8lhR0bBmKHXWLUI-4i_9ssR3M4kAbAWGXHdEUh3kSqJl5i&stp=c0.5000x0.5000f_dst-emg0_q75_tt6&ur=a86139&_nc_sid=58080a&oh=00_Af9D_UGVXoK7_ZV4O50ptHoiyfKR1jZZkEwsV68HIDSBNQ&oe=6A21E41C", "invest": 2038.05, "vendas": 0, "fat": 0.0, "cac": 0.0, "roas": 0.0}, {"name": "002 - VID - Que padrao por dentro igual peca nova", "thumb": "https://scontent.xx.fbcdn.net/v/t15.5256-10/664480609_1503393054460549_5101905110253679747_n.jpg?_nc_cat=107&ccb=1-7&_nc_ohc=uTvhH7veu_AQ7kNvwHQRqy1&_nc_oc=AdoPSxTRSxJBiMf8CH9zPz_fSSOfoAdtxprsQNraL4kH6P1TwwzHoPD0TBEiaIepL5I&_nc_zt=23&_nc_ht=scontent.xx&edm=AOgd6ZUEAAAA&_nc_gid=z9gmKpKcOoYvNsA4MqmuBw&_nc_tpa=Q5bMBQGOLt3Ci_Zfe3TA3Ob-5XjenZpMMJcGu9vpMUNsR63GwyxRVlXb7DorhaGTn-2IhDJMV4fsfaW1&stp=c0.5000x0.5000f_dst-emg0_q75_tt6&ur=a7ce7f&_nc_sid=58080a&oh=00_Af8fm4xtIBaKE-8GyPJKaKyKwxEIuC7ie1009SVt27xLXg&oe=6A220312", "invest": 1942.48, "vendas": 0, "fat": 0.0, "cac": 0.0, "roas": 0.0}, {"name": "001 - VID - Cromagem mais musica ao fundo", "thumb": "https://scontent.xx.fbcdn.net/v/t15.5256-10/651943785_1365590108917485_8029153199143357956_n.jpg?_nc_cat=105&ccb=1-7&_nc_ohc=mbVMYOVZ3KIQ7kNvwF8yCq-&_nc_oc=Adrx8lAWbbP9rNk7t1KRWy11qoIyqHBuX1DHSIq1GzwyTK-GJFNk9NJzXrTrKznPjGw&_nc_zt=23&_nc_ht=scontent.xx&edm=AOgd6ZUEAAAA&_nc_gid=z9gmKpKcOoYvNsA4MqmuBw&_nc_tpa=Q5bMBQH934MWOSHMJepJCM7R0RDsirsbCtorpge-rJsLKxV3dHP9R9oWqm2rUUtEPnCOhmcJZr-J4Rtf&stp=c0.5000x0.5000f_dst-emg0_q75_tt6&ur=a7ce7f&_nc_sid=58080a&oh=00_Af913qjYNfavH2h5hsFNRiUrvAYh9oH321ok5jSgSvMLfg&oe=6A220B6D", "invest": 1918.19, "vendas": 0, "fat": 0.0, "cac": 0.0, "roas": 0.0}, {"name": "024 - VID - Curso de cromagem", "thumb": "https://scontent.xx.fbcdn.net/v/t15.5256-10/672929488_1449370623338034_2850027046032875113_n.jpg?_nc_cat=108&ccb=1-7&_nc_ohc=Ov0Jy2I6tNAQ7kNvwF0KVzv&_nc_oc=AdrEoTHB7S5Q8l5IvWwmTwj9QKcg9e7TeVSbVpUk1QCjRERwIsCOj0jEw_VJEaOTr1A&_nc_zt=23&_nc_ht=scontent.xx&edm=AOgd6ZUEAAAA&_nc_gid=z9gmKpKcOoYvNsA4MqmuBw&_nc_tpa=Q5bMBQHUxUKI-RCxb_w5__Jr6SiliwF86QRgbl4fBSocART3Z36izil7paPczZVTFcAVL4voMfRrHcb3&stp=c0.5000x0.5000f_dst-emg0_q75_tt6&ur=a86139&_nc_sid=58080a&oh=00_Af91alMMTFEU4qq2AqiDwt8Ial1epALbfxstE1C29PbUDg&oe=6A220453", "invest": 1910.49, "vendas": 0, "fat": 0.0, "cac": 0.0, "roas": 0.0}];
-var DB_INV_META=63657.96, DB_IMPOSTO=7829.65, DB_LEAGUE=11700;
+var DB_INV_META=63657.96, DB_IMPOSTO=7829.65, DB_LEAGUE=10392.41;
 var DB_LEADS_TOTAL=28381, DB_LEADS_LP=15685, DB_COMPRADORES=532;
 var _dbPie=null, _dbBar=null;
 
@@ -1007,13 +1205,13 @@ function renderDebriefing(){
 
   // Funil
   dbRenderFunil(vCrom,vBump);
+  renderDebriefingVendas();
 
   // Graficos
   dbGLeads();
   dbGVendas(k);
   dbGGasto();
-  renderDbDim();
-  renderDbVendedoras();
+  renderDb2Origem();
   dbRenderCriativos();
 }
 
@@ -1022,47 +1220,45 @@ function dbRenderFunil(vCrom,vBump){
   if(!el) return;
   el.innerHTML='';
   var etapas=[
-    {label:'Leads Totais',val:DB_LEADS_TOTAL,cor:'#3d2b14'},
-    {label:'Leads Pagos (LP)',val:DB_LEADS_LP,cor:'#5c3d1a'},
-    {label:'Vendas Cromador Pro',val:vCrom,cor:'#b8860b'},
-    {label:'Vendas Order Bumps',val:vBump,cor:'#16a34a'},
-    {label:'Compradores da Base',val:DB_COMPRADORES,cor:'#1d4ed8'}
+    {label:'Leads Totais',    val:DB_LEADS_TOTAL, cor:'#3d2b14'},
+    {label:'Leads Pagos (LP)',val:DB_LEADS_LP,    cor:'#5c3d1a'},
+    {label:'Vendas Cromador', val:vCrom,          cor:'#b8860b'},
+    {label:'Vendas Bumps',    val:vBump,          cor:'#16a34a'},
+    {label:'Compradores Base',val:DB_COMPRADORES, cor:'#1d4ed8'}
   ];
-  // Funil uniforme: cada etapa reduz 40px de largura, centrado
-  var baseW=360, step=50;
+  el.style.cssText='width:100%';
   etapas.forEach(function(e,i){
-    var w=baseW-(i*step);
     var pct=i>0?(e.val/etapas[i-1].val*100).toFixed(1)+'%':null;
-    // Row: badge de % à esquerda + trapézio
     var row=document.createElement('div');
-    row.style.cssText='display:flex;align-items:center;width:100%;justify-content:center;position:relative';
-    // Trapézio
-    var taper=28;
-    var trap=document.createElement('div');
-    trap.style.cssText='display:flex;align-items:center;justify-content:center;gap:10px;height:46px;background:'+e.cor+';width:'+w+'px;clip-path:polygon('+taper+'px 0%,calc(100% - '+taper+'px) 0%,100% 100%,0% 100%);position:relative';
+    row.style.cssText='display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:'+(i<etapas.length-1?'1px solid var(--border)':'none');
+    // Dot colorido
+    var dot=document.createElement('div');
+    dot.style.cssText='width:12px;height:12px;border-radius:3px;background:'+e.cor+';flex-shrink:0';
+    // Label
     var lbl=document.createElement('div');
-    lbl.style.cssText='font-size:10px;color:rgba(255,255,255,.8);text-transform:uppercase;letter-spacing:.7px;white-space:nowrap';
+    lbl.style.cssText='font-size:12px;color:var(--muted);min-width:140px';
     lbl.textContent=e.label;
+    // Barra
+    var barWrap=document.createElement('div');
+    barWrap.style.cssText='flex:1;background:var(--surface);border-radius:4px;height:22px;overflow:hidden;position:relative';
+    var barFill=document.createElement('div');
+    var pctVal=i===0?100:(e.val/etapas[0].val*100);
+    barFill.style.cssText='height:100%;border-radius:4px;background:'+e.cor+';opacity:.8;width:'+Math.max(pctVal,1).toFixed(1)+'%;transition:width .6s ease';
+    barWrap.appendChild(barFill);
+    // Número
     var num=document.createElement('div');
-    num.style.cssText='font-size:20px;font-weight:900;color:#fff;white-space:nowrap';
+    num.style.cssText='font-size:16px;font-weight:800;color:var(--text);min-width:60px;text-align:right';
     num.textContent=e.val.toLocaleString('pt-BR');
-    trap.appendChild(lbl);
-    trap.appendChild(num);
-    row.appendChild(trap);
-    // Badge % à direita
-    if(pct){
-      var badge=document.createElement('div');
-      badge.style.cssText='position:absolute;right:0;font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap';
-      badge.textContent=pct;
-      row.appendChild(badge);
-    }
+    // % conversão
+    var pctEl=document.createElement('div');
+    pctEl.style.cssText='font-size:11px;color:var(--muted);min-width:52px;text-align:right';
+    pctEl.textContent=pct||'';
+    row.appendChild(dot);
+    row.appendChild(lbl);
+    row.appendChild(barWrap);
+    row.appendChild(num);
+    row.appendChild(pctEl);
     el.appendChild(row);
-    // Conector entre etapas
-    if(i<etapas.length-1){
-      var conn=document.createElement('div');
-      conn.style.cssText='width:2px;height:8px;background:var(--border);margin:0 auto';
-      el.appendChild(conn);
-    }
   });
 }
 
@@ -1121,24 +1317,39 @@ function dbGGasto(){
   var ctx=document.getElementById('db-g-gasto');
   if(!ctx) return;
   if(ctx._ch) ctx._ch.destroy();
-  var gmap={};
+  // Acumular Meta por data ISO (ordenar cronologicamente)
+  var metaMap={}, googleMap={};
   cachedMeta.forEach(function(r){
     var d=(r['Date']||'').slice(0,10);
     if(!d||d>'2026-05-28') return;
     var s=parseFloat((r['Spend (Cost, Amount Spent)']||'0').replace(/\./g,'').replace(',','.'));
-    var pts=d.split('-');
-    var lbl=pts[2]+'/'+pts[1];
-    gmap[lbl]=(gmap[lbl]||0)+s;
+    metaMap[d]=(metaMap[d]||0)+s;
   });
-  var gd=Object.keys(gmap).sort();
-  var gv=gd.map(function(d){return Math.round(gmap[d]*100)/100;});
+  cachedGoogle.forEach(function(r){
+    var d=(r['Date (Segment)']||r['Date']||'').slice(0,10);
+    if(!d||d>'2026-05-28') return;
+    var s=parseFloat((r['Cost']||r['Spend']||'0').replace(/\./g,'').replace(',','.'));
+    googleMap[d]=(googleMap[d]||0)+s;
+  });
+  // Uniao de datas ordenadas cronologicamente (ISO sort = cronologico)
+  var allDates=[].concat(Object.keys(metaMap),Object.keys(googleMap));
+  allDates=allDates.filter(function(v,i,a){return a.indexOf(v)===i;}).sort();
+  var lbls=allDates.map(function(d){var p=d.split('-');return p[2]+'/'+p[1];});
+  var metaVals=allDates.map(function(d){return Math.round((metaMap[d]||0)*100)/100;});
+  var googleVals=allDates.map(function(d){return Math.round((googleMap[d]||0)*100)/100;});
+  var hasGoogle=googleVals.some(function(v){return v>0;});
+  var datasets=[{label:'Meta Ads',data:metaVals,backgroundColor:'rgba(59,130,246,.7)',borderRadius:2,stack:'s'}];
+  if(hasGoogle) datasets.push({label:'YouTube/Google Ads',data:googleVals,backgroundColor:'rgba(52,168,83,.7)',borderRadius:2,stack:'s'});
   ctx._ch=new Chart(ctx,{
     type:'bar',
-    data:{labels:gd,datasets:[{label:'Gasto Meta Ads (R$)',data:gv,backgroundColor:'rgba(59,130,246,.7)',borderRadius:2}]},
-    options:{plugins:{legend:{display:false}},scales:{
-      x:{grid:{display:false},ticks:{font:{size:9},maxRotation:45}},
-      y:{grid:G,beginAtZero:true,ticks:{font:{size:9},callback:function(v){return 'R$'+v.toLocaleString('pt-BR');}}}
-    }}
+    data:{labels:lbls,datasets:datasets},
+    options:{
+      plugins:{legend:{display:hasGoogle,position:'bottom',labels:{boxWidth:10,font:{size:10}}}},
+      scales:{
+        x:{grid:{display:false},ticks:{font:{size:9},maxRotation:45}},
+        y:{grid:G,stacked:true,beginAtZero:true,ticks:{font:{size:9},callback:function(v){return 'R$'+Math.round(v/1000)+'k';}}}
+      }
+    }
   });
 }
 
@@ -1302,7 +1513,7 @@ const KIWIFY_DATA_INI = '2026-05-11';
 const PRODUTO_EXATO   = 'Cromador Pro 2.0'; // filtro exato de produto
 const ORDER_BUMPS     = ['Pintura Eletrostática na Prática 1.0', 'Galvanizado Pro -1.0'];
 const TODOS_PRODUTOS  = [PRODUTO_EXATO].concat(ORDER_BUMPS);
-const INVEST_LEAGUELEAD = 11700; // investimento fixo LeagueLead — alterar por lançamento
+const INVEST_LEAGUELEAD = 10392.41; // investimento fixo LeagueLead — alterar por lançamento
 const TICKET       = 797; // Ticket fixo — Faturamento Bruto = Vendas × TICKET
 const CNP_TAG      = '[CNP]';
 const REFRESH_MS   = 2 * 60 * 60 * 1000;
@@ -1498,7 +1709,7 @@ function processKiwify(rows, d1, d2) {
   var bumpByDia={}, bumpBySemDia={}, bumpByHora={}, bumpByPag={};
   ORDER_BUMPS.forEach(function(p){ bumpReembolsos[p]=0; });
   var byUTMSource={}, byUTMTerm={}, byUTMContent={}, byUTMMedium={};
-  var byVendedor={larissa:0, marcela:0, kamilly:0, ray:0};
+  var byVendedor={larissa:0, marcela:0, kamilly:0, ray:0, paula:0};
   var byPagamento={}, emailsSet={}, telefonesSet={};
   var byPlataforma={};
   var byOrigemCat={}, byPublicoCat={};
@@ -1634,10 +1845,12 @@ function processKiwify(rows, d1, d2) {
 
       // Vendedores
       var medL = med.toLowerCase();
-      if (medL.indexOf('larissa') >= 0) byVendedor.larissa++;
-      else if (medL.indexOf('marcela') >= 0) byVendedor.marcela++;
-      else if (medL.indexOf('kamilly') >= 0) byVendedor.kamilly++;
-      else if (medL.indexOf('ray')     >= 0) byVendedor.ray++;
+      var srcLow = (r['TrackingParameters_src']||'').toLowerCase();
+      if (srcLow.indexOf('lariss') >= 0 || srcLow === 'laryssa') byVendedor.larissa++;
+      else if (srcLow.indexOf('marcela') >= 0) byVendedor.marcela++;
+      else if (srcLow.indexOf('kamil') >= 0) byVendedor.kamilly++;
+      else if (srcLow === 'ray' || srcLow === 'rai') byVendedor.ray++;
+      else if (srcLow.indexOf('paula') >= 0) byVendedor.paula++;
 
       // Método pagamento
       // Normalizar método de pagamento
@@ -2392,9 +2605,9 @@ function renderVendas(kiwify, metas, wp, rmktSpendDireto, totalAdsDireto, abando
   }
 
   // ── VENDEDORES ──────────────────────────────────────────────────────────────
-  var vends = ['Larissa','Marcela','Kamilly','Ray'];
-  var vendVals = [k.byVendedor.larissa, k.byVendedor.marcela, k.byVendedor.kamilly, k.byVendedor.ray];
-  mkChart('kvChartVendedores', {type:'bar', data:{labels:vends, datasets:[{data:vendVals, backgroundColor:['#d4a800','#16a34a','#3b82f6','#e1306c'], borderRadius:8}]}, options:{plugins:{legend:{display:false}}, scales:{x:{grid:{display:false}}, y:{grid:G, beginAtZero:true}}}});
+  var vends = ['Larissa','Marcela','Kamilly','Ray','Paula'];
+  var vendVals = [k.byVendedor.larissa, k.byVendedor.marcela, k.byVendedor.kamilly, k.byVendedor.ray, k.byVendedor.paula||0];
+  mkChart('kvChartVendedores', {type:'bar', data:{labels:vends, datasets:[{data:vendVals, backgroundColor:['#d4a800','#16a34a','#3b82f6','#e1306c','#8b5cf6'], borderRadius:8}]}, options:{plugins:{legend:{display:false}}, scales:{x:{grid:{display:false}}, y:{grid:G, beginAtZero:true}}}});
 
   // ── ANALISE GERAL ──────────────────────────────────────────────────────────
   // Totais consolidados (principal + bumps)
@@ -2632,7 +2845,7 @@ function renderVendas(kiwify, metas, wp, rmktSpendDireto, totalAdsDireto, abando
 
 // ── RENDER ────────────────────────────────────────────────────────────────────
 function renderDashboard(m, mAll, mp, wp, wpp, pesq, planRows, google, kiwify, metas) {
-  kiwify = kiwify || {vendas:0,fat:0,reembolsos:0,fatReemb:0,aguardando:0,byDia:{},bySemDia:{},byHora:{},byProduto:{},byUTMSource:{},byUTMTerm:{},byUTMContent:{},byUTMMedium:{},byVendedor:{larissa:0,marcela:0,kamilly:0,ray:0},byPagamento:{},emailsSet:{},telefonesSet:{}};
+  kiwify = kiwify || {vendas:0,fat:0,reembolsos:0,fatReemb:0,aguardando:0,byDia:{},bySemDia:{},byHora:{},byProduto:{},byUTMSource:{},byUTMTerm:{},byUTMContent:{},byUTMMedium:{},byVendedor:{larissa:0,marcela:0,kamilly:0,ray:0,paula:0},byPagamento:{},emailsSet:{},telefonesSet:{}};
   metas  = metas  || {vendas:0,fat:0,leads:0,conv:0,rmkt:0,roas:0,cac:0};
   window._lastRenderArgs = [m, mAll, mp, wp, wpp, pesq, planRows, google];
   var spend=m.spend, reach=m.reach, imp=m.imp, clk=m.clk, lpv=m.lpv;
