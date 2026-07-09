@@ -25,6 +25,7 @@ const ALLOWED_SHEETS = [
 ];
 
 const ALLOWED_ORIGINS = [
+  'https://suporteb16-collab.github.io',
   'https://henriquecardosos96.github.io',
   'http://localhost',
   'http://127.0.0.1',
