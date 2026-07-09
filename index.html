@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CNP - Cromador Nível Pro — Dashboard B16</title>
+<title>CNP0426 - Dashboard B16</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>:root{--bg:#f4f4f2;--surface:#fff;--surface2:#f9f9f7;--border:#e5e5e0;--border2:#d0d0c8;--yellow:#d4a800;--yellow-bg:#fff9e0;--black:#111;--text:#1a1a1a;--muted:#777;--green:#16a34a}
@@ -4244,24 +4244,20 @@ function renderInsights(m, wp, pesq, cpl, ctr, rLPV, rLead, cplFrio, cplQuente, 
 }
 
 // ── TABS ──────────────────────────────────────────────────────────────────────
+// ── TEMA ─────────────────────────────────────────────────────────────────────
+
 // ── SELETOR DE LANCAMENTO ────────────────────────────────────────────────────
 function trocarLancamento() {
   var sel = document.getElementById('selectorLancamento');
   LANCAMENTO_ATIVO = sel.value;
-
-  // Atualiza título no header
   var titles = {
     '0426': 'CNP0426 - Cromador Nivel Pro',
     '0726': 'CNP0726 - Cromador Nivel Pro'
   };
   var el = document.getElementById('campaignTitle');
   if (el) el.textContent = titles[LANCAMENTO_ATIVO] || '';
-
-  // Recarrega dados da nova planilha
   fetchAll(true);
 }
-
-// ── TEMA ─────────────────────────────────────────────────────────────────────
 function toggleTheme() {
   var html = document.documentElement;
   var btn  = document.getElementById('btnTheme');
