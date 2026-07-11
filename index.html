@@ -2119,10 +2119,19 @@ function processWP(filtered) {
     return src === 'quente' || src === 'frio' || src.indexOf('googleads') >= 0;
   }
   function getCanalLead(r) {
+    // Regra LEGADA — exclusiva do CNP0426, preservada para não alterar histórico
     var camp = (r['utm_campaign'] || '').toLowerCase().trim();
     if (camp === 'cnp0426')             return 'meta';
     if (camp === 'segmentopersonalizado') return 'google';
     if (camp === 'forms_meta')          return 'forms';
+
+    // Regra NOVA — por utm_medium, usada quando utm_campaign não bate com o legado acima
+    // (CNP0726 em diante). Google Ads e Forms Meta Ads ainda não têm valor definido:
+    // quando existirem, adicionar aqui os utm_medium correspondentes.
+    var med = (r['utm_medium'] || '').toLowerCase().trim();
+    if (med === 'bio')                  return 'organico';
+    if (med === 'quente' || med === 'frio') return 'meta';
+    if (!med)                            return 'semtracking';
     return 'organico';
   }
 
@@ -2130,7 +2139,7 @@ function processWP(filtered) {
   var pagosTotal = 0, organicosTotal = 0;
 
   var byDay={}, byContent={}, bySource={frio:0, quente:0}, byTerm={}, byMedium={}, byTermContent={};
-  var byCanal = { meta: 0, google: 0, organico: 0, formsMeta: 0 };
+  var byCanal = { meta: 0, google: 0, organico: 0, formsMeta: 0, semTracking: 0 };
 
   for (var i = 0; i < filtered.length; i++) {
     var r = filtered[i];
@@ -2148,10 +2157,11 @@ function processWP(filtered) {
     if (pago) pagosTotal++; else organicosTotal++;
 
     // byCanal
-    if      (canal === 'meta')   byCanal.meta++;
-    else if (canal === 'google') byCanal.google++;
-    else if (canal === 'forms')  byCanal.formsMeta++;
-    else                         byCanal.organico++;
+    if      (canal === 'meta')        byCanal.meta++;
+    else if (canal === 'google')      byCanal.google++;
+    else if (canal === 'forms')       byCanal.formsMeta++;
+    else if (canal === 'semtracking') byCanal.semTracking++;
+    else                               byCanal.organico++;
 
     // Outros agregadores (só para leads pagos e forms — com utm preenchido)
     var cont = (r['utm_content'] || '').trim();
@@ -3308,26 +3318,27 @@ function renderDashboard(m, mAll, mp, wp, wpp, pesq, planRows, google, kiwify, m
   renderVendas(kiwify, metas, wp, _spendRmktForRender, _totalAdsForRender, cachedAbandono);
 
   // ── GRÁFICOS CANAL META vs GOOGLE ────────────────────────────────────────
-  var leadsGoogle   = wp.byCanal ? wp.byCanal.google    : 0; // utm_campaign = SegmentoPersonalizado
-  var leadsMeta     = wp.byCanal ? wp.byCanal.meta      : 0; // utm_campaign = cnp0426
-  var leadsOrg      = wp.byCanal ? wp.byCanal.organico  : 0;
-  var leadsFormsMeta= wp.byCanal ? wp.byCanal.formsMeta : 0; // utm_campaign = forms_meta
+  var leadsGoogle   = wp.byCanal ? wp.byCanal.google       : 0; // utm_campaign = SegmentoPersonalizado
+  var leadsMeta     = wp.byCanal ? wp.byCanal.meta         : 0; // utm_campaign = cnp0426 OU utm_medium = quente/frio
+  var leadsOrg      = wp.byCanal ? wp.byCanal.organico     : 0; // utm_medium = bio (CNP0726+)
+  var leadsFormsMeta= wp.byCanal ? wp.byCanal.formsMeta    : 0; // utm_campaign = forms_meta
+  var leadsSemTrack = wp.byCanal ? wp.byCanal.semTracking  : 0; // utm_medium vazio (CNP0726+)
 
-  // Donut — Leads por canal (4 categorias)
+  // Donut — Leads por canal (5 categorias; Sem Tracking só aparece se houver valor)
   mkChart('cCanalLeads', {
     type:'doughnut',
     data:{
-      labels:['Meta Ads','Google Ads','Forms Meta Ads','Orgânico'],
+      labels:['Meta Ads','Google Ads','Forms Meta Ads','Orgânico','Sem Tracking'],
       datasets:[{
-        data:[leadsMeta, leadsGoogle, leadsFormsMeta, leadsOrg],
-        backgroundColor:['#1877f2','#34a853','#a855f7','#9ca3af'],
+        data:[leadsMeta, leadsGoogle, leadsFormsMeta, leadsOrg, leadsSemTrack],
+        backgroundColor:['#1877f2','#34a853','#a855f7','#9ca3af','#e5e7eb'],
         borderColor:'#fff', borderWidth:3
       }]
     },
     options:{cutout:'62%', plugins:{legend:{display:false}, tooltip:{callbacks:{label:function(ctx){return ' '+ctx.label+': '+ctx.raw+' leads';}}}}}
   });
 
-  var totalLeadsCanal = leadsMeta + leadsGoogle + leadsFormsMeta + leadsOrg || 1;
+  var totalLeadsCanal = leadsMeta + leadsGoogle + leadsFormsMeta + leadsOrg + leadsSemTrack || 1;
   var canalLeadsEl = document.getElementById('canalLeadsLegend');
   if (canalLeadsEl) {
     canalLeadsEl.innerHTML = '';
@@ -3335,7 +3346,8 @@ function renderDashboard(m, mAll, mp, wp, wpp, pesq, planRows, google, kiwify, m
       {color:'#1877f2', label:'Meta Ads',       val:leadsMeta,      cpl:leadsMeta>0?spend/leadsMeta:0},
       {color:'#34a853', label:'Google Ads',      val:leadsGoogle,    cpl:leadsGoogle>0?googleSpend/leadsGoogle:0},
       {color:'#a855f7', label:'Forms Meta Ads',  val:leadsFormsMeta, cpl:0},
-      {color:'#9ca3af', label:'Orgânico',        val:leadsOrg,       cpl:0}
+      {color:'#9ca3af', label:'Orgânico',        val:leadsOrg,       cpl:0},
+      {color:'#e5e7eb', label:'Sem Tracking',    val:leadsSemTrack,  cpl:0}
     ].forEach(function(d){
       if (d.val === 0) return;
       var sq = '<svg width="12" height="12" viewBox="0 0 12 12"><rect width="12" height="12" rx="3" fill="'+d.color+'"/></svg>';
@@ -3367,6 +3379,7 @@ function renderDashboard(m, mAll, mp, wp, wpp, pesq, planRows, google, kiwify, m
   var totalSpendCanal = spend + googleSpend || 1;
   var canalSpendEl = document.getElementById('canalSpendLegend');
   if (canalSpendEl) {
+    canalSpendEl.innerHTML = '';
     [
       {color:'#1877f2', label:'Meta Ads',   val:spend},
       {color:'#34a853', label:'Google Ads', val:googleSpend}
