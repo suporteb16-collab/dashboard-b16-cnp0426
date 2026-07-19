@@ -2119,6 +2119,13 @@ function processWP(filtered) {
     return src === 'quente' || src === 'frio' || src.indexOf('googleads') >= 0;
   }
   function getCanalLead(r) {
+    if (LANCAMENTO_ATIVO === '0726') {
+      var med = (r['utm_medium'] || '').toLowerCase().trim();
+      if (med.indexOf('[feed/stories]') >= 0) return 'meta';
+      if (med === 'organico')                 return 'organico';
+      if (med === 'youtube')                  return 'google';
+      return 'semTracking';
+    }
     var camp = (r['utm_campaign'] || '').toLowerCase().trim();
     if (camp === 'cnp0426')             return 'meta';
     if (camp === 'segmentopersonalizado') return 'google';
@@ -2130,7 +2137,7 @@ function processWP(filtered) {
   var pagosTotal = 0, organicosTotal = 0;
 
   var byDay={}, byContent={}, bySource={frio:0, quente:0}, byTerm={}, byMedium={}, byTermContent={};
-  var byCanal = { meta: 0, google: 0, organico: 0, formsMeta: 0 };
+  var byCanal = { meta: 0, google: 0, organico: 0, formsMeta: 0, semTracking: 0 };
 
   for (var i = 0; i < filtered.length; i++) {
     var r = filtered[i];
@@ -2148,10 +2155,11 @@ function processWP(filtered) {
     if (pago) pagosTotal++; else organicosTotal++;
 
     // byCanal
-    if      (canal === 'meta')   byCanal.meta++;
-    else if (canal === 'google') byCanal.google++;
-    else if (canal === 'forms')  byCanal.formsMeta++;
-    else                         byCanal.organico++;
+    if      (canal === 'meta')        byCanal.meta++;
+    else if (canal === 'google')      byCanal.google++;
+    else if (canal === 'forms')       byCanal.formsMeta++;
+    else if (canal === 'semTracking') byCanal.semTracking++;
+    else                              byCanal.organico++;
 
     // Outros agregadores (só para leads pagos e forms — com utm preenchido)
     var cont = (r['utm_content'] || '').trim();
@@ -3316,35 +3324,53 @@ function renderDashboard(m, mAll, mp, wp, wpp, pesq, planRows, google, kiwify, m
   renderVendas(kiwify, metas, wp, _spendRmktForRender, _totalAdsForRender, cachedAbandono);
 
   // ── GRÁFICOS CANAL META vs GOOGLE ────────────────────────────────────────
-  var leadsGoogle   = wp.byCanal ? wp.byCanal.google    : 0; // utm_campaign = SegmentoPersonalizado
-  var leadsMeta     = wp.byCanal ? wp.byCanal.meta      : 0; // utm_campaign = cnp0426
-  var leadsOrg      = wp.byCanal ? wp.byCanal.organico  : 0;
-  var leadsFormsMeta= wp.byCanal ? wp.byCanal.formsMeta : 0; // utm_campaign = forms_meta
+  var leadsGoogle     = wp.byCanal ? wp.byCanal.google      : 0; // 0426: utm_campaign=SegmentoPersonalizado | 0726: utm_medium=Youtube
+  var leadsMeta       = wp.byCanal ? wp.byCanal.meta        : 0; // 0426: utm_campaign=cnp0426 | 0726: utm_medium contém [FEED/STORIES]
+  var leadsOrg        = wp.byCanal ? wp.byCanal.organico    : 0; // 0726: utm_medium=organico
+  var leadsFormsMeta  = wp.byCanal ? wp.byCanal.formsMeta   : 0; // apenas 0426: utm_campaign=forms_meta
+  var leadsSemTracking= wp.byCanal ? wp.byCanal.semTracking : 0; // apenas 0726: utm_medium fora do mapeamento
 
-  // Donut — Leads por canal (4 categorias)
+  var is0726CanalLeads = LANCAMENTO_ATIVO === '0726';
+  var canalLeadsLabels, canalLeadsData, canalLeadsColors;
+  if (is0726CanalLeads) {
+    canalLeadsLabels = ['Meta Ads','Google Ads','Orgânico','Sem tracking'];
+    canalLeadsData   = [leadsMeta, leadsGoogle, leadsOrg, leadsSemTracking];
+    canalLeadsColors = ['#1877f2','#34a853','#9ca3af','#f59e0b'];
+  } else {
+    canalLeadsLabels = ['Meta Ads','Google Ads','Forms Meta Ads','Orgânico'];
+    canalLeadsData   = [leadsMeta, leadsGoogle, leadsFormsMeta, leadsOrg];
+    canalLeadsColors = ['#1877f2','#34a853','#a855f7','#9ca3af'];
+  }
+
+  // Donut — Leads por canal (4 categorias, variam conforme o lancamento)
   mkChart('cCanalLeads', {
     type:'doughnut',
     data:{
-      labels:['Meta Ads','Google Ads','Forms Meta Ads','Orgânico'],
+      labels:canalLeadsLabels,
       datasets:[{
-        data:[leadsMeta, leadsGoogle, leadsFormsMeta, leadsOrg],
-        backgroundColor:['#1877f2','#34a853','#a855f7','#9ca3af'],
+        data:canalLeadsData,
+        backgroundColor:canalLeadsColors,
         borderColor:'#fff', borderWidth:3
       }]
     },
     options:{cutout:'62%', plugins:{legend:{display:false}, tooltip:{callbacks:{label:function(ctx){return ' '+ctx.label+': '+ctx.raw+' leads';}}}}}
   });
 
-  var totalLeadsCanal = leadsMeta + leadsGoogle + leadsFormsMeta + leadsOrg || 1;
+  var totalLeadsCanal = canalLeadsData.reduce(function(a,b){ return a+b; }, 0) || 1;
   var canalLeadsEl = document.getElementById('canalLeadsLegend');
   if (canalLeadsEl) {
     canalLeadsEl.innerHTML = '';
-    [
+    (is0726CanalLeads ? [
+      {color:'#1877f2', label:'Meta Ads',      val:leadsMeta,        cpl:leadsMeta>0?spend/leadsMeta:0},
+      {color:'#34a853', label:'Google Ads',     val:leadsGoogle,      cpl:leadsGoogle>0?googleSpend/leadsGoogle:0},
+      {color:'#9ca3af', label:'Orgânico',       val:leadsOrg,         cpl:0},
+      {color:'#f59e0b', label:'Sem tracking',   val:leadsSemTracking, cpl:0}
+    ] : [
       {color:'#1877f2', label:'Meta Ads',       val:leadsMeta,      cpl:leadsMeta>0?spend/leadsMeta:0},
       {color:'#34a853', label:'Google Ads',      val:leadsGoogle,    cpl:leadsGoogle>0?googleSpend/leadsGoogle:0},
       {color:'#a855f7', label:'Forms Meta Ads',  val:leadsFormsMeta, cpl:0},
       {color:'#9ca3af', label:'Orgânico',        val:leadsOrg,       cpl:0}
-    ].forEach(function(d){
+    ]).forEach(function(d){
       if (d.val === 0) return;
       var sq = '<svg width="12" height="12" viewBox="0 0 12 12"><rect width="12" height="12" rx="3" fill="'+d.color+'"/></svg>';
       canalLeadsEl.innerHTML +=
