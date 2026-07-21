@@ -3599,17 +3599,19 @@ function renderPlanejamento(planRows, metaRows, googleRows, d1, d2) {
     return { nome:nome, tag:tag, meta:meta, spend:spend, pct:pct, icon:icon };
   });
 
-  // ── LeagueLead: fase fixa (não vem da planilha) ──────────────────────────
-  var LEADLEAGUE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 3"/></svg>';
-  dadosFases.push({
-    nome:  'LeagueLead',
-    tag:   'LEADLEAGUE',
-    meta:  INVEST_LEAGUELEAD,
-    spend: INVEST_LEAGUELEAD,
-    pct:   100,
-    icon:  LEADLEAGUE_SVG,
-    fixo:  true
-  });
+  // ── LeagueLead: fase fixa (não vem da planilha) — nao existe no CNP2 (0726) ──
+  if (LANCAMENTO_ATIVO !== '0726') {
+    var LEADLEAGUE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 3"/></svg>';
+    dadosFases.push({
+      nome:  'LeagueLead',
+      tag:   'LEADLEAGUE',
+      meta:  INVEST_LEAGUELEAD,
+      spend: INVEST_LEAGUELEAD,
+      pct:   100,
+      icon:  LEADLEAGUE_SVG,
+      fixo:  true
+    });
+  }
 
   // ── TOTAIS ────────────────────────────────────────────────────────────────
   var totalMeta  = dadosFases.reduce(function(s,f){ return s + f.meta;  }, 0);
