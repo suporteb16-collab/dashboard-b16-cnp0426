@@ -2092,15 +2092,21 @@ function processMetas(rows) {
 
 // ── PROCESSAR GOOGLE ADS ──────────────────────────────────────────────────────
 function processGoogle(rows, d1, d2) {
-  var spend = 0;
+  var spend = 0, spendFrio = 0, spendQuente = 0;
   rows.forEach(function(r) {
     var d = (r['Date (Segment)'] || r['Date'] || r['Dia'] || '').trim().slice(0, 10);
     if (d1 && d2 && (d < d1 || d > d2)) return;
     var s = numFromRow(r, 'Cost (Spend, Amount Spent)');
     if (!s) s = numFromRow(r, 'Cost');
     spend += s;
+    // Investimento em captação de leads (mesmo criterio do Meta: campanha [CNP] + [LEADS])
+    var c = (r['Campaign Name'] || '').toUpperCase();
+    if (c.indexOf('[CNP]') >= 0 && c.indexOf('[LEADS]') >= 0) {
+      if (c.indexOf('FRIO') >= 0)   spendFrio   += s;
+      if (c.indexOf('QUENTE') >= 0) spendQuente += s;
+    }
   });
-  return { spend: spend };
+  return { spend: spend, spendFrio: spendFrio, spendQuente: spendQuente };
 }
 
 // ── PROCESSAR WP ─────────────────────────────────────────────────────────────
@@ -2165,7 +2171,8 @@ function processWP(filtered) {
     var cont = (r['utm_content'] || '').trim();
     if (cont) { if (!byContent[cont]) byContent[cont] = 0; byContent[cont]++; }
     var src = (r['utm_source'] || '').toLowerCase();
-    if (src === 'frio') bySource.frio++; else if (src === 'quente') bySource.quente++;
+    // Inclui variantes como "googleads-frio" / "googleads-quente", nao so o valor exato
+    if (src.indexOf('frio') >= 0) bySource.frio++; else if (src.indexOf('quente') >= 0) bySource.quente++;
     var term = (r['utm_term'] || '').trim();
     if (term) {
       if (!byTerm[term]) byTerm[term] = 0;
@@ -3469,16 +3476,18 @@ function renderDashboard(m, mAll, mp, wp, wpp, pesq, planRows, google, kiwify, m
     }).join('');
   }
 
-  // Publico
-  var cplFrio   = wp.bySource.frio   > 0 ? m.spendFrio   / wp.bySource.frio   : 0;
-  var cplQuente = wp.bySource.quente > 0 ? m.spendQuente / wp.bySource.quente : 0;
+  // Publico — investimento soma Meta Ads + Google Ads (leads googleads-frio/googleads-quente)
+  var spendFrioPub   = m.spendFrio   + (google.spendFrio   || 0);
+  var spendQuentePub = m.spendQuente + (google.spendQuente || 0);
+  var cplFrio   = wp.bySource.frio   > 0 ? spendFrioPub   / wp.bySource.frio   : 0;
+  var cplQuente = wp.bySource.quente > 0 ? spendQuentePub / wp.bySource.quente : 0;
   var pctF = leadsP > 0 ? (wp.bySource.frio   / leadsP * 100).toFixed(1) : '0';
   var pctQ = leadsP > 0 ? (wp.bySource.quente / leadsP * 100).toFixed(1) : '0';
   setEl('pubCPLFrio', fBRL(cplFrio));     setEl('pubLeadsFrio', wp.bySource.frio);
-  setEl('pubSpendFrio', fBRL(m.spendFrio)); setEl('pubPctFrio', pctF+'%');
+  setEl('pubSpendFrio', fBRL(spendFrioPub)); setEl('pubPctFrio', pctF+'%');
   var bf = document.getElementById('pubBarFrio'); if (bf) bf.style.width = pctF + '%';
   setEl('pubCPLQuente', fBRL(cplQuente));     setEl('pubLeadsQuente', wp.bySource.quente);
-  setEl('pubSpendQuente', fBRL(m.spendQuente)); setEl('pubPctQuente', pctQ+'%');
+  setEl('pubSpendQuente', fBRL(spendQuentePub)); setEl('pubPctQuente', pctQ+'%');
   var bq = document.getElementById('pubBarQuente'); if (bq) bq.style.width = pctQ + '%';
 
   // Pesquisa
