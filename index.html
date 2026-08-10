@@ -450,7 +450,7 @@ input[type=date]{background:transparent;border:none;color:#ccc;font-family:'DM S
   <!-- PLANEJAMENTO -->
   <div id="pane-planejamento" style="display:none">
     <div class="section-label">Planejamento de Investimento por Fase</div>
-    <div class="section-sub">Spend acumulado vs meta de cada fase do lancamento CNP0426</div>
+    <div class="section-sub" id="planTituloSub">Spend acumulado vs meta de cada fase do lancamento</div>
     <div style="display:flex;gap:20px;align-items:flex-start;margin-bottom:28px">
       <div id="timelinePlanejamento" style="overflow-x:auto;padding:20px 0 40px;flex:1;min-width:0"></div>
       <div id="cardTotalPlanejamento" style="flex-shrink:0;width:220px;padding-top:20px;position:sticky;top:80px"></div>
@@ -463,18 +463,18 @@ input[type=date]{background:transparent;border:none;color:#ccc;font-family:'DM S
 
   <!-- PESQUISA -->
   <div id="pane-pesquisa" style="display:none">
-    <div class="section-label">Pesquisa de Publico - Lancamento CNP0426</div>
+    <div class="section-label" id="pesqTituloSecao">Pesquisa de Publico</div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr 2fr;gap:14px;margin-bottom:20px">
-      <div class="bn"><div class="bn-lbl">Total de Respondentes</div><div class="bn-val" id="bnRespondentes">-</div><div class="bn-sub" id="bnRespondentesSub">a partir de 08/04/2026</div></div>
-      <div class="bn"><div class="bn-lbl">Base Historica</div><div class="bn-val" id="bnRespondentesHist">-</div><div class="bn-sub" id="bnRespondentesHistSub">anteriores a 08/04/2026</div></div>
+      <div class="bn"><div class="bn-lbl">Total de Respondentes</div><div class="bn-val" id="bnRespondentes">-</div><div class="bn-sub" id="bnRespondentesSub">-</div></div>
+      <div class="bn"><div class="bn-lbl">Base Comparativa</div><div class="bn-val" id="bnRespondentesHist">-</div><div class="bn-sub" id="bnRespondentesHistSub">-</div></div>
       <div class="bn"><div class="bn-lbl">% Leads-Respondentes</div><div class="bn-val" id="bnPctRespondentes">-</div><div class="bn-sub" id="bnPctRespondentesSub">respondentes / total leads</div></div>
-      <div class="card" style="display:flex;align-items:center;padding:16px 22px"><span style="font-size:12px;color:var(--muted);line-height:1.7">Comparativo: lancamento atual (>=08/04) vs base historica vs perfil alvo. Barras <strong style="color:var(--yellow)">amarelas</strong> = dentro do perfil alvo. Barras <strong style="color:#888">cinzas</strong> = base historica. Badge <strong style="color:#16a34a">Perto</strong> = acima do threshold. Delta indica variacao em pp vs historico.</span></div>
+      <div class="card" style="display:flex;align-items:center;padding:16px 22px"><span style="font-size:12px;color:var(--muted);line-height:1.7" id="pesqLegenda">-</span></div>
     </div>
     <div class="section-label">Alinhamento com Perfil Alvo</div>
     <div class="section-sub">Homem, 18-35 anos, baixa renda, CLT/informal/desempregado, busca negocio proprio</div>
     <div class="perfil-comp-grid" id="perfilCompCards"></div>
-    <div class="section-label">Distribuicao por Pergunta — Lancamento vs Historico</div>
-    <div class="section-sub">Amarelo escuro = lancamento atual · Amarelo claro = base historica · Threshold do perfil alvo indicado</div>
+    <div class="section-label" id="pesqTituloDist">Distribuicao por Pergunta</div>
+    <div class="section-sub">Amarelo = lancamento selecionado · Cinza = base comparativa · Threshold do perfil alvo indicado</div>
     <div class="pesquisa-grid" id="pesquisaCharts"></div>
 
     <!-- PESQUISA ALUNOS -->
@@ -1646,6 +1646,18 @@ function dbRenderCriativos(){
 const WORKER_URL   = 'https://noisy-brook-b3b8.henrscard.workers.dev';
 var LANCAMENTO_ATIVO = '0726'; // '0426'=CNP1 2026 | '0726'=CNP2 2026 (default)
 
+// ── CONFIG POR LANCAMENTO ────────────────────────────────────────────────────
+// Cada lancamento tem planilha propria (resolvida no Worker) e janela propria.
+// `dataIni` = inicio da captacao daquele lancamento (corte da aba Pesquisa).
+// `anterior` = lancamento usado como base comparativa na aba Pesquisa.
+var LANCAMENTOS = {
+  '0426': { nome:'CNP1 2026', titulo:'CNP1 2026 - Cromador Nivel Pro',
+            dataIni:'2026-04-08', dataIniBR:'08/04/2026', anterior:null   },
+  '0726': { nome:'CNP2 2026', titulo:'CNP2 2026 - Cromador Nivel Pro',
+            dataIni:'2026-07-01', dataIniBR:'01/07/2026', anterior:'0426' }
+};
+function cfgLanc(id) { return LANCAMENTOS[id || LANCAMENTO_ATIVO] || LANCAMENTOS['0426']; }
+
 const SHEET_META   = 'Dados Meta Ads';
 const SHEET_WP     = 'Elementor';
 const SHEET_PESQ         = 'Pesquisa';
@@ -1669,8 +1681,11 @@ const TICKET       = 797; // Ticket fixo — Faturamento Bruto = Vendas × TICKE
 const CNP_TAG      = '[CNP]';
 const REFRESH_MS   = 2 * 60 * 60 * 1000;
 
+const csvURLLanc = function(s, lanc) {
+  return WORKER_URL + '?sheet=' + encodeURIComponent(s) + '&lancamento=' + lanc;
+};
 const csvURL = function(s) {
-  return WORKER_URL + '?sheet=' + encodeURIComponent(s) + '&lancamento=' + LANCAMENTO_ATIVO;
+  return csvURLLanc(s, LANCAMENTO_ATIVO);
 };
 
 var charts = {};
@@ -1679,8 +1694,9 @@ var nextRefreshAt = null;
 var countdownTimer = null;
 var cachedMeta   = [];
 var cachedWP     = [];
-var cachedPesq        = [];
-var cachedPesqAlunos  = [];
+var cachedPesq          = [];
+var cachedPesqAnterior  = []; // aba Pesquisa do lancamento anterior (base comparativa)
+var cachedPesqAlunos    = [];
 var cachedPlan   = [];
 var cachedGoogle = [];
 var cachedKiwify = [];
@@ -1701,36 +1717,41 @@ var PERGUNTAS = {
 };
 
 // ── CSV PARSER ────────────────────────────────────────────────────────────────
+// Parser RFC4180: quebras de linha DENTRO de aspas fazem parte do valor.
+// (o parser anterior quebrava por linha fisica — os cabecalhos multi-linha das
+//  abas Pesquisa / Pesquisa Compradores eram truncados e metade das colunas
+//  desaparecia, zerando Renda, Conhecimento e Interesse.)
 function parseCSV(text) {
   var raw = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n');
-  var lines = raw.trim().split('\n');
-  if (lines.length < 2) return [];
+  if (!raw.trim()) return [];
 
-  function splitLine(line) {
-    var vals = [], cur = '', inQ = false;
-    for (var i = 0; i < line.length; i++) {
-      var ch = line[i];
-      if (ch === '"') {
-        if (inQ && line[i+1] === '"') { cur += '"'; i++; }
-        else inQ = !inQ;
-      } else if (ch === ',' && !inQ) {
-        vals.push(cur.trim()); cur = '';
-      } else {
-        cur += ch;
-      }
+  var recs = [], cur = '', rec = [], inQ = false;
+  for (var i = 0; i < raw.length; i++) {
+    var ch = raw[i];
+    if (ch === '"') {
+      if (inQ && raw[i+1] === '"') { cur += '"'; i++; }
+      else inQ = !inQ;
+    } else if (ch === ',' && !inQ) {
+      rec.push(cur.trim()); cur = '';
+    } else if (ch === '\n' && !inQ) {
+      rec.push(cur.trim()); recs.push(rec); rec = []; cur = '';
+    } else {
+      cur += ch;
     }
-    vals.push(cur.trim());
-    return vals;
   }
+  if (cur !== '' || rec.length) { rec.push(cur.trim()); recs.push(rec); }
 
-  var headers = splitLine(lines[0]).map(function(h){ return h.replace(/^"|"$/g,'').trim(); });
+  function vazio(r) { return r.every(function(v){ return v === ''; }); }
+  while (recs.length && vazio(recs[recs.length-1])) recs.pop();
+  if (recs.length < 2) return [];
+
+  var headers = recs[0].map(function(h){ return h.replace(/^"|"$/g,'').trim(); });
   var rows = [];
-  for (var i = 1; i < lines.length; i++) {
-    if (!lines[i].trim()) continue;
-    var vals = splitLine(lines[i]);
+  for (var k = 1; k < recs.length; k++) {
+    if (vazio(recs[k])) continue;
     var obj = {};
     for (var j = 0; j < headers.length; j++) {
-      obj[headers[j]] = (vals[j] || '').replace(/^"|"$/g,'').trim();
+      obj[headers[j]] = (recs[k][j] || '').replace(/^"|"$/g,'').trim();
     }
     rows.push(obj);
   }
@@ -2192,12 +2213,34 @@ function processWP(filtered) {
 }
 
 // ── PROCESSAR PESQUISA ────────────────────────────────────────────────────────
-function processPesquisa(rows) {
-  // Separa lancamento (>=08/04) de historico (<08/04)
-  var split = splitPesqByDate(rows);
-  var pesqLanc = processarPesqRows(split.lanc);
-  var pesqHist = processarPesqRows(split.hist);
-  return { lanc: pesqLanc, hist: pesqHist };
+// Segmentacao por LANCAMENTO (nao pelo filtro de datas do topo):
+//   lanc = respostas da planilha do lancamento ativo a partir da dataIni dele
+//   hist = respostas anteriores a dataIni na mesma planilha
+//          + janela de lancamento do lancamento anterior (base comparativa)
+// Para o CNP2 a planilha tem carimbo unico (01/07/2026), entao o "historico"
+// vem inteiramente do CNP1 — que e exatamente o comparativo pedido.
+function processPesquisa(rows, rowsAnterior) {
+  var cfg   = cfgLanc();
+  var split = splitPesqByDate(rows, cfg.dataIni);
+  var histRows = split.hist.slice();
+  var fontes = [];
+  if (split.hist.length) fontes.push('anteriores a ' + cfg.dataIniBR);
+
+  var cfgAnt = cfg.anterior ? cfgLanc(cfg.anterior) : null;
+  if (cfgAnt && rowsAnterior && rowsAnterior.length) {
+    var splitAnt = splitPesqByDate(rowsAnterior, cfgAnt.dataIni);
+    if (splitAnt.lanc.length) {
+      histRows = histRows.concat(splitAnt.lanc);
+      fontes.push(cfgAnt.nome + ' (a partir de ' + cfgAnt.dataIniBR + ')');
+    }
+  }
+
+  return {
+    lanc: processarPesqRows(split.lanc),
+    hist: processarPesqRows(histRows),
+    lancDesc: 'a partir de ' + cfg.dataIniBR,
+    histDesc: fontes.length ? fontes.join(' + ') : 'sem base comparativa'
+  };
 }
 
 // ── FILTROS ───────────────────────────────────────────────────────────────────
@@ -2259,7 +2302,7 @@ function applyFilters() {
     mp  = processMeta(filterMeta(cachedMeta, f.c1, f.c2));
     wpp = processWP(filterWP(cachedWP, f.c1, f.c2));
   }
-  var pesq = processPesquisa(cachedPesq);
+  var pesq = processPesquisa(cachedPesq, cachedPesqAnterior);
   var badge = document.getElementById('compBadge');
   if (badge) badge.style.display = (f.c1 && f.c2) ? 'inline-flex' : 'none';
   // Vendas sempre travadas no período do lançamento: 11/05 → 31/05/2026
@@ -2271,7 +2314,7 @@ function applyFilters() {
 
 function resetFilters() {
   var today = new Date().toISOString().slice(0,10);
-  var defaultStart = LANCAMENTO_ATIVO === '0726' ? '2026-07-01' : '2026-04-08';
+  var defaultStart = cfgLanc().dataIni;
   var dates = cachedMeta
     .filter(function(r){ return (r['Campaign Name']||'').indexOf(CNP_TAG) >= 0; })
     .map(function(r){ return (r['Date']||'').trim(); })
@@ -3493,12 +3536,12 @@ function renderDashboard(m, mAll, mp, wp, wpp, pesq, planRows, google, kiwify, m
   // Pesquisa
   var pctResp = wp.total > 0 ? (pesq.lanc.total / wp.total * 100) : 0;
   setEl('bnRespondentes', pesq.lanc.total);
-  setEl('bnRespondentesSub', 'a partir de 08/04/2026');
+  setEl('bnRespondentesSub', pesq.lancDesc);
   setEl('bnRespondentesHist', pesq.hist.total);
-  setEl('bnRespondentesHistSub', pesq.hist.total + ' respostas historicas');
+  setEl('bnRespondentesHistSub', pesq.histDesc);
   setEl('bnPctRespondentes', fPct(pctResp));
   setEl('bnPctRespondentesSub', pesq.lanc.total + ' de ' + wp.total + ' leads');
-  renderPesquisa(pesq.lanc, pesq.hist);
+  renderPesquisa(pesq.lanc, pesq.hist, pesq);
   window._totalCompradores = kiwify ? kiwify.vendas : 0;
   renderPesqAlunos(processPesqAlunos(cachedPesqAlunos));
   renderPlanejamento(planRows, filterMetaAll(cachedMeta, _activeFilters.d1, _activeFilters.d2), cachedGoogle, _activeFilters.d1, _activeFilters.d2);
@@ -3509,6 +3552,7 @@ function renderDashboard(m, mAll, mp, wp, wpp, pesq, planRows, google, kiwify, m
 
 // ── PLANEJAMENTO ──────────────────────────────────────────────────────────────
 function renderPlanejamento(planRows, metaRows, googleRows, d1, d2) {
+  setEl('planTituloSub', 'Spend acumulado vs meta de cada fase do lancamento ' + cfgLanc().nome);
   if (!planRows || !planRows.length) {
     var el = document.getElementById('timelinePlanejamento');
     if (el) el.innerHTML = '<div style="text-align:center;color:var(--muted);padding:40px">Aba Planejamento nao encontrada na planilha.</div>';
@@ -3762,6 +3806,7 @@ var TEXTO_PARA_SLUG = {
   '45 a 54 anos':'45-54','55 a 64 anos':'55+','65 anos ou mais':'55+','menos de 18 anos':'menos-18',
   // Q2 Genero
   'Homem':'homem','Mulher':'mulher',
+  'Prefiro não dizer':'nao-dizer','Prefiro nao dizer':'nao-dizer',
   // Q3 Tempo
   'menos de 3 meses':'menos-3m','entre 3 a 6 meses':'3-6m',
   'entre 6 meses a 1 ano':'6m-1a','entre 1 ano e 2 anos':'1-2a','mais de 2 anos':'mais-2a',
@@ -3772,7 +3817,7 @@ var TEXTO_PARA_SLUG = {
   // Q5 Ocupacao
   'CLT / Funcionario / Colaborador':'clt','autonomo / microempreendedor':'autonomo',
   'Desempregado':'desempregado','Empreendedor / empresario':'empreendedor',
-  'Mecanico de motos':'mecanico','Loja de peças de Motos':'mecanico',
+  'Mecanico de motos':'mecanico','Loja de peças de Motos':'loja-pecas',
   'Estudante':'estudante','outros':'outro',
   // Q6 Conhecimento
   'Nao tenho nenhum conhecimento sobre.':'nenhum',
@@ -3793,45 +3838,66 @@ var TEXTO_PARA_SLUG = {
   '\u00c1 cima de  R$10.000':'acima-10k','\u00c1 cima de R$10.000':'acima-10k',
   'Acima de R$ 10.000':'acima-10k','acima de r$ 10.000':'acima-10k',
   // Q9 Ja fez curso
-  'Sim':'sim','não':'nao','nao':'nao',
+  'Sim':'sim','não':'nao','nao':'nao','Não':'nao',
   // Q10 O que despertou
   'Baixa concorrência, por não ter outras empresas na minha cidade':'baixa-concorrencia',
   'A taxa de lucratividade (que é bem alta)':'lucratividade',
   'A demanda por esse serviço ser alta':'demanda'
 };
 
-// Converte coluna → nome Q
-// Mapeamento coluna → Q: usa substring matching para tolerar variações de header
-var COL_PARA_Q_MAP = [
-  { fragment:'Qual a sua idade',                        q:'Q1' },
-  { fragment:'Qual seu g\u00eanero',                    q:'Q2' },
-  { fragment:'A quanto tempo voc\u00ea acompanha',      q:'Q3' },
-  { fragment:'Por onde voc\u00ea conheceu',             q:'Q4' },
-  { fragment:'Com oque voc\u00ea trabalha',             q:'Q5' },
-  { fragment:'Qual seu conhecimento',                   q:'Q6' },
-  { fragment:'Voc\u00ea ja \u00e9 aluno',               q:'Q7' },
-  { fragment:'Qual sua renda mensal',                   q:'Q8' },
-  { fragment:'Voc\u00ea ja fez algum curso',            q:'Q9' },
-  { fragment:'Oque despertou seu interesse',            q:'Q10' }
-];
-
-// Mantido para compatibilidade com código legado
-var COL_PARA_Q = {
-  'Qual a sua idade?':'Q1',
-  'Qual seu g\u00eanero?':'Q2',
-  'A quanto tempo voc\u00ea acompanha o perfil da Mundial cromo?':'Q3',
-  'Por onde voc\u00ea conheceu o perfil da Mundial Cromo?':'Q4',
-  'Voc\u00ea ja \u00e9 aluno de algum dos nossos cursos?':'Q7',
-  'Com oque voc\u00ea trabalha atualmente?\nEscreva em "outros" apenas se nenhuma das op\u00e7\u00f5es definam sua ocupa\u00e7\u00e3o nesse momento':'Q5',
-  'Com oque voc\u00ea trabalha atualmente?':'Q5',
-  'Qual seu conhecimento sobre o ramo da Cromagem?':'Q6',
-  'Qual sua renda mensal atualmente?':'Q8',
-  'Voc\u00ea ja fez algum curso relacionado a cromagem?':'Q9',
-  'Oque despertou seu interesse em aprender a trabalhar com o cromo?':'Q10'
+// ── CLASSIFICACAO POR VALOR ──────────────────────────────────────────────────
+// A aba Pesquisa do CNP2 mistura DUAS ordens de coluna (o formulario mudou de
+// ramificacao no meio do lancamento): ~4.6k respostas tem renda onde deveria
+// estar o canal, ocupacao onde deveria estar o tempo de acompanhamento, etc.
+// Por isso a pergunta e identificada pelo VALOR da celula, nao pela posicao
+// nem pelo cabecalho — cada opcao de resposta pertence a uma unica pergunta.
+var VOCAB_Q = {
+  Q1: ['menos-18','18-24','25-34','35-44','45-54','55+'],
+  Q2: ['homem','mulher','nao-dizer'],
+  Q3: ['menos-3m','3-6m','6m-1a','1-2a','mais-2a'],
+  Q4: ['instagram','facebook','youtube','tiktok','kwai','google','indicacao'],
+  Q5: ['clt','autonomo','desempregado','mecanico','empreendedor','estudante','loja-pecas'],
+  Q6: ['nenhum','pouco','avancado'],
+  Q7: ['nao-interesse','aluno-cromagem','aluno-galvanizacao','aluno-ambos'],
+  Q8: ['ate-1k','1k-3k','3k-5k','5k-10k','acima-10k'],
+  Q10:['baixa-concorrencia','lucratividade','demanda','negocio-proprio','renda-extra','curiosidade','nao-clara'],
+  Q11:['500-1k-rapido','1k-3k-medio','3k-5k-longo','5k+']
 };
+var SLUG_PARA_Q = {};
+Object.keys(VOCAB_Q).forEach(function(q){
+  VOCAB_Q[q].forEach(function(s){ SLUG_PARA_Q[s] = q; });
+});
+// Slugs que existem em mais de uma pergunta — resolvidos depois dos demais,
+// no primeiro candidato ainda vazio na linha.
+var SLUG_AMBIGUO = { 'outro':['Q5','Q4'], 'sim':['Q9','Q7'], 'nao':['Q9','Q7'] };
 
-// Data de corte do lançamento
-var DATA_LANCAMENTO = '2026-04-08';
+// Colunas de texto livre — ignoradas (uma resposta aberta pode coincidir com um slug)
+var COLS_TEXTO_LIVRE = ['me fale um pouco mais', 'oque falta para voce'];
+function isTextoLivre(col) {
+  var c = (col || '').replace(/\s+/g,' ').trim().toLowerCase();
+  return COLS_TEXTO_LIVRE.some(function(f){ return c.indexOf(f) >= 0; });
+}
+
+// Uma linha da planilha → { Q1:'25-34', Q2:'homem', ... }
+function classificarLinhaPesq(row) {
+  var resp = {}, ambiguos = [];
+  Object.keys(row).forEach(function(col){
+    if (isTextoLivre(col)) return;
+    var val = (row[col] || '').trim();
+    if (!val) return;
+    var slug = TEXTO_PARA_SLUG[val] || val.toLowerCase();
+    var q = SLUG_PARA_Q[slug];
+    if (q) { if (!resp[q]) resp[q] = slug; return; }
+    if (SLUG_AMBIGUO[slug]) ambiguos.push(slug);
+  });
+  ambiguos.forEach(function(slug){
+    var cands = SLUG_AMBIGUO[slug];
+    for (var i = 0; i < cands.length; i++) {
+      if (!resp[cands[i]]) { resp[cands[i]] = slug; return; }
+    }
+  });
+  return resp;
+}
 
 function parseDatePesq(str) {
   // formatos: DD/MM/YYYY HH:MM:SS ou YYYY-MM-DD
@@ -3846,51 +3912,15 @@ function parseDatePesq(str) {
 function processarPesqRows(rows) {
   var result = {};
   var total  = 0;
-  var headerMap = null;
-
-  // Fallback por posição de coluna (ordem real da planilha)
-  // pos: 0=Carimbo, 1=Idade(Q1), 2=Genero(Q2), 3=Tempo(Q3), 4=Canal(Q4),
-  //      5=Aluno(Q7), 6=Ocupacao(Q5), 7=Conhecimento(Q6), 8=Renda(Q8),
-  //      9=JaFez(Q9), 10=Despertou(Q10)
-  var POS_MAP = [null,'Q1','Q2','Q3','Q4','Q7','Q5','Q6','Q8','Q9','Q10'];
 
   rows.forEach(function(row) {
-    var cols = Object.keys(row);
-    var hasData = cols.some(function(c){ return (row[c]||'').trim(); });
-    if (!hasData) return;
-
-    if (!headerMap) {
-      headerMap = {};
-      cols.forEach(function(col, idx) {
-        var colNorm = col.replace(/\s+/g,' ').trim().toLowerCase();
-        var matched = false;
-        for (var i = 0; i < COL_PARA_Q_MAP.length; i++) {
-          var entry = COL_PARA_Q_MAP[i];
-          if (colNorm.indexOf(entry.fragment.toLowerCase()) >= 0) {
-            if (!headerMap[col]) { headerMap[col] = entry.q; matched = true; }
-            break;
-          }
-        }
-        // Fallback por posição
-        if (!matched && idx < POS_MAP.length && POS_MAP[idx]) {
-          if (!headerMap[col]) headerMap[col] = POS_MAP[idx];
-        }
-      });
-    }
-
-    // Verificar se é linha de dado real (tem ao menos valor na col de idade)
-    var hasAge = cols.some(function(c){ return headerMap[c]==='Q1' && (row[c]||'').trim(); });
-    if (!hasAge) return;
-
+    var resp = classificarLinhaPesq(row);
+    // Sem idade = linha vazia / cabecalho residual / lixo — nao conta
+    if (!resp.Q1) return;
     total++;
-    cols.forEach(function(col) {
-      var q = headerMap[col];
-      if (!q) return;
-      var val = (row[col] || '').trim();
-      if (!val) return;
-      var slug = TEXTO_PARA_SLUG[val] || val.toLowerCase().trim();
+    Object.keys(resp).forEach(function(q) {
       if (!result[q]) result[q] = {};
-      result[q][slug] = (result[q][slug] || 0) + 1;
+      result[q][resp[q]] = (result[q][resp[q]] || 0) + 1;
     });
   });
 
@@ -3902,18 +3932,16 @@ function processarPesqRows(rows) {
 }
 
 
-function splitPesqByDate(rows) {
+// Separa as respostas de UM lancamento pela data de inicio da captacao dele
+function splitPesqByDate(rows, dataIni) {
   var lancRows = [], histRows = [];
   rows.forEach(function(row) {
     var ts = row['Carimbo de data/hora'] || '';
     if (!ts.trim()) return;
     var d = parseDatePesq(ts);
     if (!d) return;
-    if (d >= DATA_LANCAMENTO) {
-      lancRows.push(row);
-    } else {
-      histRows.push(row);
-    }
+    if (d >= dataIni) lancRows.push(row);
+    else              histRows.push(row);
   });
   return { lanc: lancRows, hist: histRows };
 }
@@ -3938,15 +3966,32 @@ function calcMatch(pesq) {
   return matches;
 }
 
-function renderPesquisa(pesqLanc, pesqHist) {
+function renderPesquisa(pesqLanc, pesqHist, pesqMeta) {
+  var cfg  = cfgLanc();
+  var meta = pesqMeta || {};
+  var temHist = !!(pesqHist && pesqHist.total);
   var matchesLanc = calcMatch(pesqLanc);
-  var matchesHist = pesqHist ? calcMatch(pesqHist) : {};
+  var matchesHist = temHist ? calcMatch(pesqHist) : {};
+  var nomeLanc = cfg.nome; // `cfg` e sombreado dentro do loop por pergunta
+  var nomeHist = cfg.anterior ? cfgLanc(cfg.anterior).nome : 'historico';
+
+  // Titulo e legendas do painel — seguem o lancamento selecionado
+  setEl('pesqTituloSecao', 'Pesquisa de Publico - ' + cfg.nome);
+  setHtml('pesqLegenda',
+      'Comparativo: <strong>' + cfg.nome + '</strong> (' + (meta.lancDesc || 'a partir de ' + cfg.dataIniBR) + ') '
+    + 'vs base comparativa <strong>' + (meta.histDesc || nomeHist) + '</strong> vs perfil alvo. '
+    + 'Barras <strong style="color:var(--yellow)">amarelas</strong> = dentro do perfil alvo. '
+    + 'Barras <strong style="color:#888">cinzas</strong> = base comparativa. '
+    + 'Badge <strong style="color:#16a34a">Perto</strong> = acima do threshold. '
+    + 'Delta indica variacao em pp vs ' + nomeHist + '. '
+    + '<em>Esta aba e segmentada por lancamento, nao pelo filtro de datas do topo.</em>');
+  setEl('pesqTituloDist', 'Distribuicao por Pergunta — ' + cfg.nome + ' vs ' + nomeHist);
 
   // big numbers
   setEl('bnRespondentes', pesqLanc.total);
-  setEl('bnRespondentesSub', 'a partir de 08/04/2026');
-  setEl('bnRespondentesHist', pesqHist ? pesqHist.total : '-');
-  setEl('bnRespondentesHistSub', pesqHist ? 'anteriores a 08/04/2026' : '-');
+  setEl('bnRespondentesSub', meta.lancDesc || ('a partir de ' + cfg.dataIniBR));
+  setEl('bnRespondentesHist', temHist ? pesqHist.total : '-');
+  setEl('bnRespondentesHistSub', temHist ? (meta.histDesc || nomeHist) : 'sem base comparativa');
 
   // Cards de comparacao
   var compEl = document.getElementById('perfilCompCards');
@@ -3967,7 +4012,7 @@ function renderPesquisa(pesqLanc, pesqHist) {
         var dCor = diff >= 0 ? '#16a34a' : '#ef4444';
         var dArrow = diff >= 0 ? '▲' : '▼';
         deltaHtml = '<div style="font-size:10px;color:'+dCor+';margin-top:4px;font-weight:600">'
-                  + dArrow + ' ' + Math.abs(diff).toFixed(1) + ' pp vs historico ('
+                  + dArrow + ' ' + Math.abs(diff).toFixed(1) + ' pp vs ' + nomeHist + ' ('
                   + mH.pct.toFixed(0) + '%)</div>';
       }
       html += '<div class="perfil-card" style="border-color:'+brd+';background:'+bg+'">'
@@ -4027,8 +4072,8 @@ function renderPesquisa(pesqLanc, pesqHist) {
       card.innerHTML = '<div class="card-title-row"><span class="card-title">'+q+' - '+label+'</span>'+badge+'</div>'
                      + '<canvas id="pesq_'+q+'" height="'+h+'"></canvas>'
                      + '<div style="display:flex;gap:16px;margin-top:10px;font-size:10px;color:var(--muted)">'
-                     + '<span><span style="display:inline-block;width:10px;height:10px;background:'+YL+';border-radius:2px;margin-right:4px"></span>Lancamento</span>'
-                     + '<span><span style="display:inline-block;width:10px;height:10px;background:rgba(100,100,100,.4);border-radius:2px;margin-right:4px"></span>Historico</span>'
+                     + '<span><span style="display:inline-block;width:10px;height:10px;background:'+YL+';border-radius:2px;margin-right:4px"></span>'+nomeLanc+'</span>'
+                     + '<span><span style="display:inline-block;width:10px;height:10px;background:rgba(100,100,100,.4);border-radius:2px;margin-right:4px"></span>'+nomeHist+'</span>'
                      + '</div>';
       container.appendChild(card);
       setTimeout(function(){
@@ -4037,8 +4082,8 @@ function renderPesquisa(pesqLanc, pesqHist) {
           data:{
             labels: allLabels,
             datasets:[
-              {label:'Lancamento', data:lancVals, backgroundColor:bgColorsLanc, borderRadius:4, barThickness:14},
-              {label:'Historico',  data:histVals, backgroundColor:bgColorsHist, borderRadius:4, barThickness:14}
+              {label:nomeLanc,  data:lancVals, backgroundColor:bgColorsLanc, borderRadius:4, barThickness:14},
+              {label:nomeHist,  data:histVals, backgroundColor:bgColorsHist, borderRadius:4, barThickness:14}
             ]
           },
           options:{
@@ -4295,12 +4340,11 @@ function renderInsights(m, wp, pesq, cpl, ctr, rLPV, rLead, cplFrio, cplQuente, 
 function trocarLancamento() {
   var sel = document.getElementById('selectorLancamento');
   LANCAMENTO_ATIVO = sel.value;
-  var titles = {
-    '0426': 'CNP1 2026 - Cromador Nivel Pro',
-    '0726': 'CNP2 2026 - Cromador Nivel Pro'
-  };
+  // Zera caches dependentes de planilha para nao misturar lancamentos caso
+  // algum fetch falhe no meio da troca
+  cachedPesq = []; cachedPesqAnterior = []; cachedPesqAlunos = [];
   var el = document.getElementById('campaignTitle');
-  if (el) el.textContent = titles[LANCAMENTO_ATIVO] || '';
+  if (el) el.textContent = cfgLanc().titulo;
   fetchAll(true);
 }
 
@@ -4411,9 +4455,13 @@ function fetchAll(manual) {
   if (errBan) errBan.classList.remove('show');
   if (loadTxt) loadTxt.textContent = 'Conectando ao Google Sheets...';
 
-  // 8 abas via Worker (incluindo Abandonos — Worker resolve o CORS)
+  // Abas via Worker (incluindo Abandonos — Worker resolve o CORS)
+  // O indice 9 e a aba Pesquisa do lancamento ANTERIOR (base comparativa da
+  // aba Pesquisa); vem de outra planilha, por isso csvURLLanc.
+  var lancAnterior = cfgLanc().anterior;
   var urls = [csvURL(SHEET_META), csvURL(SHEET_WP), csvURL(SHEET_PESQ), csvURL(SHEET_PLAN), csvURL(SHEET_GOOGLE), csvURL(SHEET_KIWIFY), csvURL(SHEET_METAS), csvURL(SHEET_ABANDONO), csvURL(SHEET_PESQ_ALUNOS)];
-  var TOTAL_FETCHES = 9;
+  if (lancAnterior) urls.push(csvURLLanc(SHEET_PESQ, lancAnterior));
+  var TOTAL_FETCHES = urls.length;
   var results = [];
   var done = 0;
 
@@ -4444,6 +4492,7 @@ function fetchAll(manual) {
         var rawAbandono = results[7] || '';
         cachedAbandono = parseCSV(rawAbandono);
         cachedPesqAlunos = parseCSV(results[8] || '');
+        cachedPesqAnterior = lancAnterior ? parseCSV(results[9] || '') : [];
         window._debugAbandono = {
           rawLen: rawAbandono.length,
           rows: cachedAbandono.length,
