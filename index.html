@@ -1660,6 +1660,14 @@ var LANCAMENTOS = {
 };
 function cfgLanc(id) { return LANCAMENTOS[id || LANCAMENTO_ATIVO] || LANCAMENTOS['0426']; }
 
+// Janela de datas usada para filtrar vendas (Kiwify) na aba Vendas.
+// CNP1 (0426) mantém a janela histórica fixa do carrinho daquele lançamento.
+// Qualquer outro lançamento usa: início da captação → hoje (dinâmico).
+function vendaWindow() {
+  if (LANCAMENTO_ATIVO === '0426') return { d1: '2026-05-11', d2: '2026-05-31' };
+  return { d1: cfgLanc().dataIni, d2: new Date().toISOString().slice(0,10) };
+}
+
 const SHEET_META   = 'Dados Meta Ads';
 const SHEET_WP     = 'Elementor';
 const SHEET_PESQ         = 'Pesquisa';
@@ -1942,6 +1950,9 @@ function processKiwify(rows, d1, d2) {
   // status diferente de "paid", ou datas fora do período configurado).
   (function buildKiwifyDebug() {
     var produtos = {}, statuses = {}, datas = [];
+    // Estatísticas restritas apenas às linhas do produto alvo (evita misturar
+    // status/datas de outros produtos na mensagem de diagnóstico).
+    var prodStatuses = {}, prodDatas = [], prodPaidDatas = [];
     rows.forEach(function(r) {
       var p = (r['Product_product_name'] || '').trim();
       var s = (r['order_status'] || '').trim().toLowerCase();
@@ -1949,8 +1960,13 @@ function processKiwify(rows, d1, d2) {
       if (p) produtos[p] = (produtos[p]||0) + 1;
       if (s) statuses[s] = (statuses[s]||0) + 1;
       if (d) datas.push(d);
+      if (isProduto(p)) {
+        if (s) prodStatuses[s] = (prodStatuses[s]||0) + 1;
+        if (d) prodDatas.push(d);
+        if (s === 'paid' && d) prodPaidDatas.push(d);
+      }
     });
-    datas.sort();
+    datas.sort(); prodDatas.sort(); prodPaidDatas.sort();
     window._kiwifyDebug = {
       totalLinhas: rows.length,
       produtosEncontrados: produtos,
@@ -1958,7 +1974,12 @@ function processKiwify(rows, d1, d2) {
       dataMin: datas[0] || null,
       dataMax: datas[datas.length-1] || null,
       produtoAlvo: PRODUTO_EXATO,
-      produtoAlvoBateComAlgum: Object.keys(produtos).some(isProduto)
+      produtoAlvoBateComAlgum: Object.keys(produtos).some(isProduto),
+      produtoAlvoStatusEncontrados: prodStatuses,
+      produtoAlvoDataMin: prodDatas[0] || null,
+      produtoAlvoDataMax: prodDatas[prodDatas.length-1] || null,
+      produtoAlvoPaidDataMin: prodPaidDatas[0] || null,
+      produtoAlvoPaidDataMax: prodPaidDatas[prodPaidDatas.length-1] || null
     };
   })();
 
@@ -2343,8 +2364,13 @@ function applyFilters() {
   var pesq = processPesquisa(cachedPesq, cachedPesqAnterior);
   var badge = document.getElementById('compBadge');
   if (badge) badge.style.display = (f.c1 && f.c2) ? 'inline-flex' : 'none';
-  // Vendas sempre travadas no período do lançamento: 11/05 → 31/05/2026
-  var kiwify = processKiwify(cachedKiwify, '2026-05-11', '2026-05-31');
+  // Vendas: para o CNP1 (0426) mantém a janela histórica travada do carrinho
+  // (11/05 → 31/05/2026, usada no Debriefing). Para qualquer outro lançamento
+  // (ex: CNP2/0726), usa a janela dinâmica do início da captação até hoje —
+  // antes disso ficava travado nas datas do CNP1 e nenhuma venda do lançamento
+  // ativo aparecia, mesmo existindo na planilha.
+  var vw = vendaWindow();
+  var kiwify = processKiwify(cachedKiwify, vw.d1, vw.d2);
   window._dbKiwify = kiwify;
   var metas  = processMetas(cachedMetas);
   renderDashboard(m, mAll, mp, wp, wpp, pesq, cachedPlan, google, kiwify, metas);
@@ -2436,10 +2462,19 @@ function renderVendasDiagBanner(k) {
       + 'Ajuste a constante <code>PRODUTO_EXATO</code> no código para bater com o nome real do produto na Kiwify.';
     el.style.display = 'block';
   } else {
-    var statusNomes = Object.keys(dbg.statusEncontrados);
-    el.innerHTML = '⚠️ <strong>Vendas Confirmadas = 0:</strong> o produto "' + dbg.produtoAlvo + '" foi encontrado, mas nenhuma venda com status "paid" '
-      + 'no período configurado (a partir de ' + KIWIFY_DATA_INI + '). Status encontrados na planilha: <strong>' + statusNomes.join(', ') + '</strong>. '
-      + 'Datas na planilha: ' + (dbg.dataMin || '?') + ' até ' + (dbg.dataMax || '?') + '.';
+    var vw = vendaWindow();
+    var statusProd = Object.keys(dbg.produtoAlvoStatusEncontrados || {});
+    if (dbg.produtoAlvoPaidDataMin) {
+      // Existem vendas "paid" do produto, só que fora da janela de datas aplicada na aba Vendas.
+      el.innerHTML = '⚠️ <strong>Vendas Confirmadas = 0:</strong> existem vendas "paid" de "' + dbg.produtoAlvo + '" na planilha '
+        + '(de ' + dbg.produtoAlvoPaidDataMin + ' até ' + dbg.produtoAlvoPaidDataMax + '), mas a aba Vendas só considera o período '
+        + '<strong>' + vw.d1 + ' até ' + vw.d2 + '</strong> (lançamento ativo: ' + LANCAMENTO_ATIVO + '). '
+        + 'Se esse período estiver errado para o lançamento atual, ajuste <code>vendaWindow()</code> ou <code>LANCAMENTOS[\'' + LANCAMENTO_ATIVO + '\'].dataIni</code> no código.';
+    } else {
+      el.innerHTML = '⚠️ <strong>Vendas Confirmadas = 0:</strong> o produto "' + dbg.produtoAlvo + '" foi encontrado na planilha, mas nenhuma linha desse produto tem status "paid". '
+        + 'Status encontrados para esse produto: <strong>' + (statusProd.length ? statusProd.join(', ') : '(nenhum)') + '</strong>. '
+        + 'Datas desse produto na planilha: ' + (dbg.produtoAlvoDataMin || '?') + ' até ' + (dbg.produtoAlvoDataMax || '?') + '.';
+    }
     el.style.display = 'block';
   }
 }
