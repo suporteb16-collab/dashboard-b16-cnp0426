@@ -571,6 +571,8 @@ input[type=date]{background:transparent;border:none;color:#ccc;font-family:'DM S
   <!-- VENDAS -->
   <div id="pane-vendas" style="display:none">
 
+    <div id="vendasDiagBanner" style="display:none;background:#fff4e5;border:1px solid #f0b429;border-radius:8px;padding:14px 18px;margin-bottom:16px;font-size:13px;line-height:1.6;color:#7a4a00"></div>
+
     <!-- ── SECAO 1: BIG NUMBERS ─────────────────────────────────────────── -->
     <div class="section-label">Cromador Pro 2.0 — Visão Geral de Vendas</div>
     <div class="grid-vendas-top">
@@ -1674,6 +1676,17 @@ const ABANDONO_CSV_URL  = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID_P
   + '/gviz/tq?tqx=out:csv&sheet=' + encodeURIComponent('Abandonos');
 const KIWIFY_DATA_INI = '2026-05-11';
 const PRODUTO_EXATO   = 'Cromador Pro 2.0'; // filtro exato de produto
+
+// Normaliza string para comparação tolerante (evita zerar vendas por diferença de
+// maiúsculas/minúsculas, acentos ou espaços extras vindos da planilha Kiwify).
+function normStr(s) {
+  return String(s || '')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .trim().toLowerCase().replace(/\s+/g, ' ');
+}
+const PRODUTO_EXATO_NORM = normStr(PRODUTO_EXATO);
+function isProduto(v) { return normStr(v) === PRODUTO_EXATO_NORM; }
+
 const ORDER_BUMPS     = ['Pintura Eletrostática na Prática 1.0', 'Galvanizado Pro -1.0'];
 const TODOS_PRODUTOS  = [PRODUTO_EXATO].concat(ORDER_BUMPS);
 const INVEST_LEAGUELEAD = 10392.41; // investimento fixo LeagueLead — alterar por lançamento
@@ -1924,6 +1937,31 @@ function processKiwify(rows, d1, d2) {
 
   window._kiwifyRowsGlobal = rows; // usado pelo módulo de abandono
 
+  // ── Diagnóstico: mapeia produtos/status/datas reais da planilha, sem nenhum filtro,
+  // para facilitar identificar por que "Vendas" pode zerar (nome de produto diferente,
+  // status diferente de "paid", ou datas fora do período configurado).
+  (function buildKiwifyDebug() {
+    var produtos = {}, statuses = {}, datas = [];
+    rows.forEach(function(r) {
+      var p = (r['Product_product_name'] || '').trim();
+      var s = (r['order_status'] || '').trim().toLowerCase();
+      var d = (r['Data Criacao'] || '').trim().slice(0,10);
+      if (p) produtos[p] = (produtos[p]||0) + 1;
+      if (s) statuses[s] = (statuses[s]||0) + 1;
+      if (d) datas.push(d);
+    });
+    datas.sort();
+    window._kiwifyDebug = {
+      totalLinhas: rows.length,
+      produtosEncontrados: produtos,
+      statusEncontrados: statuses,
+      dataMin: datas[0] || null,
+      dataMax: datas[datas.length-1] || null,
+      produtoAlvo: PRODUTO_EXATO,
+      produtoAlvoBateComAlgum: Object.keys(produtos).some(isProduto)
+    };
+  })();
+
   // ── Pré-passe: reembolsos do produto no período do lançamento, deduplicado por ref ──
   rows.forEach(function(r) {
     var st   = (r['order_status'] || '').trim().toLowerCase();
@@ -1931,7 +1969,7 @@ function processKiwify(rows, d1, d2) {
     var ref  = (r['order_ref'] || '').trim();
     var data = (r['Data Criacao'] || '').trim().slice(0,10);
     if ((st === 'refunded' || st === 'refundeded') && ref && data >= DATA_INI && data <= '2026-05-31') {
-      if (prod === PRODUTO_EXATO && !refundedRefs[ref]) {
+      if (isProduto(prod) && !refundedRefs[ref]) {
         refundedRefs[ref] = true;
         reembolsos++;
       } else if (ORDER_BUMPS.indexOf(prod) >= 0 && !refundedRefs[ref+'_'+prod]) {
@@ -1951,7 +1989,7 @@ function processKiwify(rows, d1, d2) {
     var status = (r['order_status'] || '').trim().toLowerCase();
     var fat_v  = numKiwify(r['Faturamento']);
     var prod   = (r['Product_product_name'] || '').trim();
-    var isProdutoExato = (prod === PRODUTO_EXATO);
+    var isProdutoExato = isProduto(prod);
     var hora   = (r['Hora'] || '').trim().slice(0,2);
     var pag    = (r['payment_method'] || '').trim().toLowerCase();
     var email  = (r['Customer_email'] || '').trim().toLowerCase();
@@ -2380,8 +2418,35 @@ function barHoriz(container, data, maxVal, corFn) {
   }).join('');
 }
 
+// Mostra um aviso na aba Vendas quando a planilha Kiwify carregou mas nenhuma
+// linha bateu com o produto/status esperado — evita "0 vendas" silencioso.
+function renderVendasDiagBanner(k) {
+  var el = document.getElementById('vendasDiagBanner');
+  if (!el) return;
+  var dbg = window._kiwifyDebug;
+  if (!dbg || k.vendas > 0) { el.style.display = 'none'; return; }
+  if (dbg.totalLinhas === 0) {
+    el.innerHTML = '⚠️ <strong>A aba "' + SHEET_KIWIFY + '" da planilha veio vazia.</strong> '
+      + 'Verifique se essa aba existe com esse nome exato e se o Worker (' + WORKER_URL + ') está conseguindo lê-la para o lançamento ativo (' + LANCAMENTO_ATIVO + ').';
+    el.style.display = 'block';
+  } else if (!dbg.produtoAlvoBateComAlgum) {
+    var nomes = Object.keys(dbg.produtosEncontrados);
+    el.innerHTML = '⚠️ <strong>Vendas Confirmadas = 0:</strong> nenhuma linha da planilha tem o produto "' + dbg.produtoAlvo + '". '
+      + 'Produto(s) encontrado(s) na aba (' + dbg.totalLinhas + ' linhas): <strong>' + (nomes.length ? nomes.join(', ') : '(coluna Product_product_name vazia)') + '</strong>. '
+      + 'Ajuste a constante <code>PRODUTO_EXATO</code> no código para bater com o nome real do produto na Kiwify.';
+    el.style.display = 'block';
+  } else {
+    var statusNomes = Object.keys(dbg.statusEncontrados);
+    el.innerHTML = '⚠️ <strong>Vendas Confirmadas = 0:</strong> o produto "' + dbg.produtoAlvo + '" foi encontrado, mas nenhuma venda com status "paid" '
+      + 'no período configurado (a partir de ' + KIWIFY_DATA_INI + '). Status encontrados na planilha: <strong>' + statusNomes.join(', ') + '</strong>. '
+      + 'Datas na planilha: ' + (dbg.dataMin || '?') + ' até ' + (dbg.dataMax || '?') + '.';
+    el.style.display = 'block';
+  }
+}
+
 function renderVendas(kiwify, metas, wp, rmktSpendDireto, totalAdsDireto, abandonoRows) {
   var k = kiwify;
+  renderVendasDiagBanner(k);
   // Usar valor passado diretamente (evita problema de ordem de execução)
   var rmktSpend = rmktSpendDireto || 0;
   // Fallback: tentar pegar do DOM se não foi passado
@@ -2507,7 +2572,7 @@ function renderVendas(kiwify, metas, wp, rmktSpendDireto, totalAdsDireto, abando
       var rawDt = (r['created_at']  || r['data'] || r['hora'] || '').trim();
       var dt    = rawDt.slice(0, 10); // pega só YYYY-MM-DD
       if (!em) return;
-      if (prod !== PRODUTO_EXATO) return;
+      if (!isProduto(prod)) return;
       if (st   !== 'abandoned')   return;
       if (dt   < DATA_INI_AB)     return;
       totalLinhas++;
@@ -2521,7 +2586,7 @@ function renderVendas(kiwify, metas, wp, rmktSpendDireto, totalAdsDireto, abando
       var st  = (r['order_status'] || '').toLowerCase();
       var em  = (r['Customer_email'] || '').trim().toLowerCase();
       var prd = (r['Product_product_name'] || '').trim();
-      if (st === 'paid' && em && prd === PRODUTO_EXATO) {
+      if (st === 'paid' && em && isProduto(prd)) {
         emailsVendasPagas[em] = true;
       }
     });
@@ -2543,7 +2608,7 @@ function renderVendas(kiwify, metas, wp, rmktSpendDireto, totalAdsDireto, abando
       var st   = (r['status'] || '').trim().toLowerCase();
       var rawDt = (r['created_at'] || r['data'] || r['hora'] || '').trim();
       var dt    = rawDt.slice(0, 10);
-      if (!em || prod !== PRODUTO_EXATO || st !== 'abandoned' || dt < DATA_INI_AB) return;
+      if (!em || !isProduto(prod) || st !== 'abandoned' || dt < DATA_INI_AB) return;
       if (!abDados[em]) {
         abDados[em] = {
           nome:     (r['name'] || r['nome'] || r['Nome'] || '').trim(),
@@ -2584,7 +2649,7 @@ function renderVendas(kiwify, metas, wp, rmktSpendDireto, totalAdsDireto, abando
       var st   = (r['status']       || '').trim().toLowerCase();
       var rawDt = (r['created_at']  || r['data'] || r['hora'] || '').trim();
       var dt    = rawDt.slice(0, 10);
-      if (!em || prod !== PRODUTO_EXATO || st !== 'abandoned' || dt < DATA_INI_AB) return;
+      if (!em || !isProduto(prod) || st !== 'abandoned' || dt < DATA_INI_AB) return;
       abPorDia[dt] = (abPorDia[dt] || 0) + 1;
     });
 
@@ -2594,7 +2659,7 @@ function renderVendas(kiwify, metas, wp, rmktSpendDireto, totalAdsDireto, abando
       var em  = (r['Customer_email'] || '').trim().toLowerCase();
       var prd = (r['Product_product_name'] || '').trim();
       var dt  = (r['Data Criacao'] || '').trim().slice(0, 10);
-      if (st === 'paid' && prd === PRODUTO_EXATO && emailsAbSet[em] && dt) {
+      if (st === 'paid' && isProduto(prd) && emailsAbSet[em] && dt) {
         vdPorDia[dt] = (vdPorDia[dt] || 0) + 1;
       }
     });
@@ -2887,9 +2952,9 @@ function renderVendas(kiwify, metas, wp, rmktSpendDireto, totalAdsDireto, abando
   var recompraLista = []; // para exportação CSV
   Object.keys(recompraTodos).forEach(function(em) {
     var prods = Object.keys(recompraTodos[em]);
-    if (prods.indexOf(PRODUTO_EXATO) >= 0 && prods.length >= 2) {
+    if (prods.some(isProduto) && prods.length >= 2) {
       recompraCount++;
-      var outrosProdos = prods.filter(function(p){ return p !== PRODUTO_EXATO; });
+      var outrosProdos = prods.filter(function(p){ return !isProduto(p); });
       var info = recompraInfo[em] || {};
       recompraLista.push({
         nome:     info.nome || '',
