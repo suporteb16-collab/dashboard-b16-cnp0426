@@ -1122,7 +1122,7 @@ function renderDb2Origem(){
   var rows=k._rows.filter(function(r){
     var st=(r['order_status']||'').toLowerCase();
     var prod=(r['Product_product_name']||'').trim();
-    return (st==='paid'||st==='paided') && TODOS_PRODUTOS.indexOf(prod)>=0;
+    return (st==='paid'||st==='paided') && isProdutoLanc(prod);
   });
 
   // Por utm_source — categorizado por canal com cores
@@ -1270,7 +1270,7 @@ function setDb2OrigemMode(mode){
   var rows=k._rows.filter(function(r){
     var st=(r['order_status']||'').toLowerCase();
     var prod=(r['Product_product_name']||'').trim();
-    return (st==='paid'||st==='paided') && TODOS_PRODUTOS.indexOf(prod)>=0;
+    return (st==='paid'||st==='paided') && isProdutoLanc(prod);
   });
   var CANAL_CORES_D={'YouTube':'#ef4444','WhatsApp':'#16a34a','Instagram':'#8b5cf6','Comercial':'#6b7280','Outros':'#d4a800','Sem Tracking':'#4b5563'};
   var map={};
@@ -1695,9 +1695,43 @@ function normStr(s) {
 const PRODUTO_EXATO_NORM = normStr(PRODUTO_EXATO);
 function isProduto(v) { return normStr(v) === PRODUTO_EXATO_NORM; }
 
-const ORDER_BUMPS     = ['Pintura Eletrostática na Prática 1.0', 'Galvanizado Pro -1.0'];
+// Order bumps / produtos secundários vendidos no lançamento.
+// A Kiwify grava o MESMO produto com grafias diferentes ("Galvanizado Pro -1.0" e
+// "Galvanizador Pro -1.0"), por isso a comparação é normalizada (normStr) e as duas
+// variantes ficam listadas. Conferido contra o export da Kiwify de 10-11/08/2026.
+const ORDER_BUMPS     = [
+  'Pintura Eletrostática na Prática 1.0',
+  'Galvanizado Pro -1.0',
+  'Galvanizador Pro -1.0',
+  'Galvanizador Pro',
+  'Calculadora de Prestação de Serviço',
+  'Cromador Pro'
+];
 const TODOS_PRODUTOS  = [PRODUTO_EXATO].concat(ORDER_BUMPS);
-const INVEST_LEAGUELEAD = 10392.41; // investimento fixo LeagueLead — alterar por lançamento
+
+// Comparação normalizada: imune a acento, caixa e espaço duplo vindos da planilha.
+const ORDER_BUMPS_NORM = ORDER_BUMPS.map(normStr);
+const TODOS_PRODUTOS_NORM = TODOS_PRODUTOS.map(normStr);
+function isOrderBump(v)     { return ORDER_BUMPS_NORM.indexOf(normStr(v)) >= 0; }
+function isProdutoLanc(v)   { return TODOS_PRODUTOS_NORM.indexOf(normStr(v)) >= 0; }
+
+const INVEST_LEAGUELEAD = 10392.41; // investimento fixo LeagueLead — só CNP1 (0426)
+
+// Custos fixos por lançamento que não vêm de nenhuma planilha de mídia.
+// CNP1 (0426) = LeagueLead (total já registrado). CNP2 (0726) = Clint, duas linhas.
+const CUSTOS_FIXOS = {
+  '0426': [
+    { nome: 'LeagueLead', tag: 'LEADLEAGUE', valor: INVEST_LEAGUELEAD }
+  ],
+  '0726': [
+    { nome: 'Clint - Ligação',    tag: 'CLINT_LIGACAO', valor:  7500.00 },
+    { nome: 'Clint - API Oficial', tag: 'CLINT_API',    valor: 19550.00 }
+  ]
+};
+function custosFixos(lanc) { return CUSTOS_FIXOS[lanc || LANCAMENTO_ATIVO] || []; }
+function custosFixosTotal(lanc) {
+  return custosFixos(lanc).reduce(function(s, c) { return s + c.valor; }, 0);
+}
 const TICKET       = 797; // Ticket fixo — Faturamento Bruto = Vendas × TICKET
 const CNP_TAG      = '[CNP]';
 const REFRESH_MS   = 2 * 60 * 60 * 1000;
@@ -1923,8 +1957,11 @@ function srcToPlat(s) {
 
 function processKiwify(rows, d1, d2) {
   var DATA_INI = KIWIFY_DATA_INI;
+  var JANELA_LANC = vendaWindow();
   var vendas=0, fat=0, reembolsos=0, fatReemb=0, aguardando=0;
-  var paidRefs = {}, refundedRefs = {};
+  // bumpRefs evita contar duas vezes o mesmo order bump quando o webhook da Kiwify
+  // reentrega o evento e a Página1 grava a linha repetida (visto em 10-11/08/2026).
+  var paidRefs = {}, refundedRefs = {}, bumpRefs = {};
   var byDia={}, bySemDia={}, byHora={}, byProduto={};
   // Order bumps — estruturas paralelas
   var bumpVendas=0, bumpFat=0, bumpReembolsos={}, bumpFatProd={};  // bumpReembolsos: prod→count
@@ -1989,11 +2026,13 @@ function processKiwify(rows, d1, d2) {
     var prod = (r['Product_product_name'] || '').trim();
     var ref  = (r['order_ref'] || '').trim();
     var data = (r['Data Criacao'] || '').trim().slice(0,10);
-    if ((st === 'refunded' || st === 'refundeded') && ref && data >= DATA_INI && data <= '2026-05-31') {
+    // Janela do lançamento ativo. Antes era '2026-05-31' fixo (resquício do CNP0426),
+    // o que zerava os reembolsos de qualquer lançamento posterior.
+    if ((st === 'refunded' || st === 'refundeded') && ref && data >= DATA_INI && data <= JANELA_LANC.d2) {
       if (isProduto(prod) && !refundedRefs[ref]) {
         refundedRefs[ref] = true;
         reembolsos++;
-      } else if (ORDER_BUMPS.indexOf(prod) >= 0 && !refundedRefs[ref+'_'+prod]) {
+      } else if (isOrderBump(prod) && !refundedRefs[ref+'_'+prod]) {
         refundedRefs[ref+'_'+prod] = true;
         bumpReembolsos[prod] = (bumpReembolsos[prod]||0) + 1;
       }
@@ -2107,7 +2146,8 @@ function processKiwify(rows, d1, d2) {
     }
 
     // ── ORDER BUMPS ───────────────────────────────────────────────────────────
-    if ((status === 'paid' || status === 'paided') && ORDER_BUMPS.indexOf(prod) >= 0) {
+    if ((status === 'paid' || status === 'paided') && isOrderBump(prod) && ref && !bumpRefs[ref+'_'+normStr(prod)]) {
+      bumpRefs[ref+'_'+normStr(prod)] = true;
       bumpVendas++; bumpFat += fat_v;
       bumpFatProd[prod] = (bumpFatProd[prod]||0) + fat_v;
       // Por dia
@@ -2507,7 +2547,7 @@ function renderVendas(kiwify, metas, wp, rmktSpendDireto, totalAdsDireto, abando
 
   // ── Investimento Total = Meta + Google + LeagueLead ──────────────────────
   var totalAds = totalAdsDireto || 0;
-  var investTotal = totalAds + INVEST_LEAGUELEAD; // total real (inclui LeagueLead) — usado no ROI
+  var investTotal = totalAds + custosFixosTotal(); // total real (inclui custos fixos do lançamento) — usado no ROI
   var investCardDisplay = totalAds; // card mostra só Meta[CNP] + Google
 
   // ── ROI = Faturamento Bruto / Investimento Total ──────────────────────────
@@ -3743,19 +3783,20 @@ function renderPlanejamento(planRows, metaRows, googleRows, d1, d2) {
     return { nome:nome, tag:tag, meta:meta, spend:spend, pct:pct, icon:icon };
   });
 
-  // ── LeagueLead: fase fixa (não vem da planilha) — nao existe no CNP2 (0726) ──
-  if (LANCAMENTO_ATIVO !== '0726') {
-    var LEADLEAGUE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 3"/></svg>';
+  // ── Custos fixos: linhas que não vêm de nenhuma planilha de mídia ───────────
+  // CNP1 (0426) = LeagueLead. CNP2 (0726) = Clint (Ligação + API Oficial).
+  var CUSTO_FIXO_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 3"/></svg>';
+  custosFixos().forEach(function(c) {
     dadosFases.push({
-      nome:  'LeagueLead',
-      tag:   'LEADLEAGUE',
-      meta:  INVEST_LEAGUELEAD,
-      spend: INVEST_LEAGUELEAD,
+      nome:  c.nome,
+      tag:   c.tag,
+      meta:  c.valor,
+      spend: c.valor,
       pct:   100,
-      icon:  LEADLEAGUE_SVG,
+      icon:  FASE_SVG[c.tag] || CUSTO_FIXO_SVG,
       fixo:  true
     });
-  }
+  });
 
   // ── TOTAIS ────────────────────────────────────────────────────────────────
   var totalMeta  = dadosFases.reduce(function(s,f){ return s + f.meta;  }, 0);
