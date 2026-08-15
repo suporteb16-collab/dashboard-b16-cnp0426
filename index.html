@@ -719,7 +719,7 @@ input[type=date]{background:transparent;border:none;color:#ccc;font-family:'DM S
     <!-- Linha 0: Totais consolidados -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
       <div class="bn" style="position:relative">
-        <div class="bn-info">ⓘ<span class="bn-tooltip">Soma de vendas pagas do Cromador Pro 2.0 + Pintura Eletrostática na Prática 1.0 + Galvanizado Pro -1.0.</span></div>
+        <div class="bn-info">ⓘ<span class="bn-tooltip">Soma de vendas pagas dos produtos principais (Cromador Pro 2.0 e Cromador Pro) com os order bumps: Calculadora, Pintura Eletrostática, Galvanizador Pro e Galvanizador Pro -1.0.</span></div>
         <div class="bn-lbl">Vendas Totais (3 Produtos)</div>
         <div class="bn-val" id="kvVendasTotal" style="font-size:44px">-</div>
         <div class="bn-sub" id="kvVendasTotalSub">principal + order bumps</div>
@@ -1073,10 +1073,9 @@ function renderDebriefingVendas(){
   // Calcular valores
   var vCrom=k.vendas||0;
   var fCrom=k.fat||0;
-  var fPint=k.bumpFatProd?((k.bumpFatProd['Pintura Eletrostatica na Pratica 1.0']||k.bumpFatProd['Pintura Eletrost\u00e1tica na Pr\u00e1tica 1.0'])||0):0;
-  var fGalv=k.bumpFatProd?(k.bumpFatProd['Galvanizado Pro -1.0']||0):0;
+  var fBumps=somaBumps(k.bumpFatProd);
   var vBump=k.bumpVendas||0;
-  var fatTotal=fCrom+fPint+fGalv;
+  var fatTotal=fCrom+fBumps;
   var invCI=63657.96+7829.65+10392.41;
   var roas=invCI>0?fatTotal/invCI:0;
   var cac=532>0?invCI/532:0;
@@ -1089,7 +1088,7 @@ function renderDebriefingVendas(){
   s('db3Vendas',(vCrom+vBump).toLocaleString('pt-BR'));
   s('db3VendasSub',vCrom+' Cromador + '+vBump+' Order Bumps');
   s('db3Fat',fBRL(fatTotal));
-  s('db3FatSub',fBRL(fCrom)+' Cromador + '+fBRL(fPint+fGalv)+' Bumps');
+  s('db3FatSub',fBRL(fCrom)+' Cromador + '+fBRL(fBumps)+' Bumps');
   s('db3Roas',roas.toFixed(2));
   s('db3CAC',fBRL(cac));
   s('db3CPL', 'R$ 1,67');
@@ -1315,10 +1314,9 @@ function renderDebriefing(){
   var COLS=['#d4a800','#16a34a','#3b82f6','#8b5cf6','#ef4444','#f97316','#14b8a6','#ec4899'];
   var vCrom=k?k.vendas:461;
   var fCrom=k?k.fat:vCrom*797;
-  var fPint=k&&k.bumpFatProd?(k.bumpFatProd['Pintura Eletrostatica na Pratica 1.0']||0):0;
-  var fGalv=k&&k.bumpFatProd?(k.bumpFatProd['Galvanizado Pro -1.0']||0):0;
+  var fBumps=k?somaBumps(k.bumpFatProd):0;
   var vBump=k?k.bumpVendas:0;
-  var fatTotal=fCrom+fPint+fGalv;
+  var fatTotal=fCrom+fBumps;
   var reemb=k?k.reembolsos:15;
   var invCI=DB_INV_META+DB_IMPOSTO+DB_LEAGUE;
   var cpl=DB_INV_META/DB_LEADS_LP;
@@ -1326,7 +1324,7 @@ function renderDebriefing(){
   var roas=fatTotal/invCI;
   function s(id,v){var e=document.getElementById(id);if(e)e.textContent=v;}
   s('db-fat-total',fBRL(fatTotal));
-  s('db-fat-sub',fBRL(fCrom)+' Cromador + '+fBRL(fPint+fGalv)+' Bumps');
+  s('db-fat-sub',fBRL(fCrom)+' Cromador + '+fBRL(fBumps)+' Bumps');
   s('db-vend-total',(vCrom+vBump).toLocaleString('pt-BR'));
   s('db-vend-sub',vCrom+' Cromador + '+vBump+' Order Bumps');
   s('db-inv-ci',fBRL(invCI));
@@ -1337,12 +1335,14 @@ function renderDebriefing(){
   s('db-cac',fBRL(cac));
   s('db-v-crom',vCrom.toLocaleString('pt-BR'));
   s('db-f-crom','Faturamento: '+fBRL(fCrom));
-  var vPint=fPint>0?Math.round(fPint/237):0;
-  var vGalv=fGalv>0?Math.round(fGalv/197):0;
-  s('db-v-pint',vPint.toLocaleString('pt-BR'));
-  s('db-f-pint','Faturamento: '+fBRL(fPint));
-  s('db-v-galv',vGalv.toLocaleString('pt-BR'));
-  s('db-f-galv','Faturamento: '+fBRL(fGalv));
+  // Contagem real por produto (bumpVendasProd), em vez de estimar dividindo o
+  // faturamento por um ticket fixo de R$237/R$197.
+  var vProd = (k && k.bumpVendasProd) || {}, fProd = (k && k.bumpFatProd) || {};
+  var PINT = 'Pintura Eletrostática na Prática 1.0', GALV = 'Galvanizador Pro -1.0';
+  s('db-v-pint',(vProd[PINT]||0).toLocaleString('pt-BR'));
+  s('db-f-pint','Faturamento: '+fBRL(fProd[PINT]||0));
+  s('db-v-galv',(vProd[GALV]||0).toLocaleString('pt-BR'));
+  s('db-f-galv','Faturamento: '+fBRL(fProd[GALV]||0));
   var bumpReembTot=k&&k.bumpReembolsos?Object.values(k.bumpReembolsos).reduce(function(a,b){return a+b;},0):0;
   s('db-reemb',reemb+(bumpReembTot?' (+'+bumpReembTot+' bumps)':''));
   s('db-reemb-sub',vCrom>0?(reemb/vCrom*100).toFixed(1)+'% das vendas':'-');
@@ -1436,8 +1436,7 @@ function dbGVendas(k){
   var vb=dias.map(function(d){
     var p=0,g=0;
     if(k.bumpByDia&&k.bumpByDia[d]){
-      p=k.bumpByDia[d]['Pintura Eletrostatica na Pratica 1.0']||0;
-      g=k.bumpByDia[d]['Galvanizado Pro -1.0']||0;
+      p=somaBumps(k.bumpByDia[d]);
     }
     return p+g;
   });
@@ -1505,7 +1504,7 @@ function renderDbDim(){
   var dimMap={utm_source:'Plataforma',utm_medium:'Publico',utm_content:'Criativo',utm_campaign:'Campanha'};
   var dimLabel=dimMap[field];
   var COLS=['#d4a800','#16a34a','#3b82f6','#8b5cf6','#ef4444','#f97316','#14b8a6','#ec4899'];
-  var PRODS=['Cromador Pro 2.0','Pintura Eletrostatica na Pratica 1.0','Galvanizado Pro -1.0'];
+  var PRODS=TODOS_PRODUTOS;
   var grupos={};
   // Diagnosticar campos disponíveis na primeira row
   if(k._rows.length>0&&!window._dbDimLogged){
@@ -1686,6 +1685,29 @@ const PRODUTO_EXATO_NORM = normStr(PRODUTO_EXATO);
 const PRINCIPAIS_NORM = PRODUTOS_PRINCIPAIS.map(normStr);
 // Vale para os dois produtos principais (Cromador Pro 2.0 e Cromador Pro).
 function isProduto(v) { return PRINCIPAIS_NORM.indexOf(normStr(v)) >= 0; }
+
+// Rótulo curto e cor fixa por order bump, usados nos gráficos empilhados.
+const BUMP_LABEL = {
+  'Calculadora de Prestação de Serviço':  'Calculadora',
+  'Pintura Eletrostática na Prática 1.0': 'Pintura Eletrostática',
+  'Galvanizador Pro':                     'Galvanizador Pro',
+  'Galvanizador Pro -1.0':                'Galvanizador Pro 1.0'
+};
+const BUMP_COR = {
+  'Calculadora de Prestação de Serviço':  '#8b5cf6',
+  'Pintura Eletrostática na Prática 1.0': '#16a34a',
+  'Galvanizador Pro':                     '#ef4444',
+  'Galvanizador Pro -1.0':                '#3b82f6'
+};
+// Soma um mapa produto→número sobre TODOS os order bumps. Substitui os acessos
+// por nome literal, que erravam a grafia ('Galvanizado Pro -1.0' sem o "r",
+// 'Pintura Eletrostatica na Pratica 1.0' sem acento) e devolviam sempre 0.
+function somaBumps(mapa) {
+  if (!mapa) return 0;
+  var t = 0;
+  ORDER_BUMPS.forEach(function(p){ t += mapa[p] || 0; });
+  return t;
+}
 
 // Order bumps: produtos vendidos junto, com order_ref próprio.
 // Comparação normalizada (normStr) para tolerar acento/caixa/espaço da planilha.
@@ -3062,7 +3084,7 @@ function renderVendas(kiwify, metas, wp, rmktSpendDireto, totalAdsDireto, abando
   if (breakEl) {
     var bLines = '<div style="display:flex;justify-content:space-between"><span>Cromador Pro 2.0</span><strong>' + k.reembolsos + '</strong></div>';
     ORDER_BUMPS.forEach(function(p) {
-      var short = p.indexOf('Pintura') >= 0 ? 'Pintura Eletrostática' : 'Galvanizado Pro';
+      var short = BUMP_LABEL[p] || p;
       bLines += '<div style="display:flex;justify-content:space-between"><span>' + short + '</span><strong>' + (k.bumpReembolsos[p]||0) + '</strong></div>';
     });
     breakEl.innerHTML = bLines;
@@ -3141,26 +3163,13 @@ function renderVendas(kiwify, metas, wp, rmktSpendDireto, totalAdsDireto, abando
   }
 
   // Rosca: faturamento por produto
-  var prodFatLabels = ['Cromador Pro 2.0', 'Pintura Eletrostática', 'Galvanizado Pro'];
-  var prodFatVals   = [k.fat, k.bumpByPag ? 0 : 0, 0]; // calculado abaixo
-  var fatPintura = 0, fatGalv = 0;
-  ORDER_BUMPS.forEach(function(p) {
-    var bDia = k.bumpByDia;
-    // soma faturamento do bump por produto via bumpByPag não serve — usar bumpFat por produto
-  });
-  // Recalcular fat por produto bump via bumpByDia
-  var bumpFatByProd = {};
-  ORDER_BUMPS.forEach(function(p){ bumpFatByProd[p] = 0; });
-  // Usamos bumpVendas proporcional ao bumpFat (não temos fat por produto separado)
-  // Melhor: somar fat diretamente no bloco de bumps — já temos bumpByPag com fat
-  // Calcular fat por produto via nova estrutura bumpFatProd
-  var bumpFatProd = k.bumpFatProd || {};
-  prodFatVals = [
-    k.fat,
-    bumpFatProd['Pintura Eletrostática na Prática 1.0'] || 0,
-    bumpFatProd['Galvanizado Pro -1.0'] || 0
-  ];
-  var prodFatCols = ['#d4a800','#16a34a','#3b82f6'];
+  // Uma fatia por order bump, a partir de ORDER_BUMPS. Antes eram duas fatias
+  // fixas e uma usava a chave 'Galvanizado Pro -1.0' (sem o "r"), inexistente
+  // na base — a fatia ficava sempre zerada e dois bumps nem apareciam.
+  var bumpFatProd   = k.bumpFatProd || {};
+  var prodFatLabels = ['Cromador Pro 2.0'].concat(ORDER_BUMPS.map(function(p){ return BUMP_LABEL[p] || p; }));
+  var prodFatVals   = [k.fat].concat(ORDER_BUMPS.map(function(p){ return bumpFatProd[p] || 0; }));
+  var prodFatCols   = ['#d4a800'].concat(ORDER_BUMPS.map(function(p){ return BUMP_COR[p] || '#9ca3af'; }));
   mkChart('kvFatProdDonut', {
     type:'doughnut',
     /* maintainAspectRatio set below */
@@ -3184,15 +3193,22 @@ function renderVendas(kiwify, metas, wp, rmktSpendDireto, totalAdsDireto, abando
   // Dia da semana empilhado por produto (principal + bumps)
   var ordemSem = ['Seg','Ter','Qua','Qui','Sex','Sab','Dom'];
   var semVals  = ordemSem.map(function(d){return k.bySemDia[d]||0;});
-  var semPint  = ordemSem.map(function(d){return (k.bumpBySemDia[d]||{})['Pintura Eletrostática na Prática 1.0']||0;});
-  var semGalv  = ordemSem.map(function(d){return (k.bumpBySemDia[d]||{})['Galvanizado Pro -1.0']||0;});
+  // Um dataset por order bump, montado a partir de ORDER_BUMPS — antes eram dois
+  // datasets fixos e um deles usava a chave 'Galvanizado Pro -1.0', que não
+  // existe na base (o nome real tem "r"), então vinha sempre zerado.
+  var semBumps = ORDER_BUMPS.map(function(p){
+    return {
+      label: BUMP_LABEL[p] || p,
+      data: ordemSem.map(function(d){ return (k.bumpBySemDia[d]||{})[p]||0; }),
+      backgroundColor: BUMP_COR[p] || '#9ca3af',
+      borderRadius: 4
+    };
+  });
   mkChart('kvChartSemDia', {
     type:'bar',
     data:{labels:ordemSem, datasets:[
-      {label:'Cromador Pro 2.0',    data:semVals, backgroundColor:'rgba(212,168,0,.85)', borderRadius:4},
-      {label:'Pintura Eletrostática',data:semPint, backgroundColor:'rgba(22,163,74,.7)',  borderRadius:4},
-      {label:'Galvanizado Pro',      data:semGalv, backgroundColor:'rgba(59,130,246,.7)', borderRadius:4}
-    ]},
+      {label:'Cromador Pro 2.0', data:semVals, backgroundColor:'rgba(212,168,0,.85)', borderRadius:4}
+    ].concat(semBumps)},
     options:{plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:10}}}}, scales:{x:{grid:{display:false}, stacked:true}, y:{grid:G, beginAtZero:true, stacked:true}}}
   });
 
@@ -3200,15 +3216,19 @@ function renderVendas(kiwify, metas, wp, rmktSpendDireto, totalAdsDireto, abando
   var horas = []; for(var h=0;h<24;h++) horas.push(h);
   var horaLbls  = horas.map(function(h){return h+'h';});
   var horaValsP = horas.map(function(h){return k.byHora[h]||0;});
-  var horaPint  = horas.map(function(h){return (k.bumpByHora[h]||{})['Pintura Eletrostática na Prática 1.0']||0;});
-  var horaGalv  = horas.map(function(h){return (k.bumpByHora[h]||{})['Galvanizado Pro -1.0']||0;});
+  var horaBumps = ORDER_BUMPS.map(function(p){
+    return {
+      label: BUMP_LABEL[p] || p,
+      data: horas.map(function(h){ return (k.bumpByHora[h]||{})[p]||0; }),
+      backgroundColor: BUMP_COR[p] || '#9ca3af',
+      borderRadius: 3
+    };
+  });
   mkChart('kvChartHora', {
     type:'bar',
     data:{labels:horaLbls, datasets:[
-      {label:'Cromador Pro 2.0',    data:horaValsP, backgroundColor:'rgba(212,168,0,.85)', borderRadius:3},
-      {label:'Pintura Eletrostática',data:horaPint,  backgroundColor:'rgba(22,163,74,.7)',  borderRadius:3},
-      {label:'Galvanizado Pro',      data:horaGalv,  backgroundColor:'rgba(59,130,246,.7)', borderRadius:3}
-    ]},
+      {label:'Cromador Pro 2.0', data:horaValsP, backgroundColor:'rgba(212,168,0,.85)', borderRadius:3}
+    ].concat(horaBumps)},
     options:{plugins:{legend:{display:false}}, scales:{x:{grid:{display:false}, stacked:true, ticks:{font:{size:9}}}, y:{grid:G, beginAtZero:true, stacked:true}}}
   });
 
@@ -3216,15 +3236,19 @@ function renderVendas(kiwify, metas, wp, rmktSpendDireto, totalAdsDireto, abando
   var diasOrd  = Object.keys(k.byDia).concat(Object.keys(k.bumpByDia)).filter(function(v,i,a){return a.indexOf(v)===i;}).sort();
   var diasLbls = diasOrd.map(function(d){var p=d.split('-'); return p[2]+'/'+p[1];});
   var diaMain  = diasOrd.map(function(d){return (k.byDia[d]||{vendas:0}).vendas;});
-  var diaPint  = diasOrd.map(function(d){return (k.bumpByDia[d]||{})['Pintura Eletrostática na Prática 1.0']||0;});
-  var diaGalv  = diasOrd.map(function(d){return (k.bumpByDia[d]||{})['Galvanizado Pro -1.0']||0;});
+  var diaBumps = ORDER_BUMPS.map(function(p){
+    return {
+      label: BUMP_LABEL[p] || p,
+      data: diasOrd.map(function(d){ return (k.bumpByDia[d]||{})[p]||0; }),
+      backgroundColor: BUMP_COR[p] || '#9ca3af',
+      borderRadius: 4
+    };
+  });
   mkChart('kvChartDiaProd', {
     type:'bar',
     data:{labels:diasLbls, datasets:[
-      {label:'Cromador Pro 2.0',    data:diaMain, backgroundColor:'rgba(212,168,0,.85)', borderRadius:4},
-      {label:'Pintura Eletrostática',data:diaPint, backgroundColor:'rgba(22,163,74,.7)',  borderRadius:4},
-      {label:'Galvanizado Pro',      data:diaGalv, backgroundColor:'rgba(59,130,246,.7)', borderRadius:4}
-    ]},
+      {label:'Cromador Pro 2.0', data:diaMain, backgroundColor:'rgba(212,168,0,.85)', borderRadius:4}
+    ].concat(diaBumps)},
     options:{plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:10}}}}, scales:{x:{grid:{display:false}, stacked:true, ticks:{maxRotation:45}}, y:{grid:G, beginAtZero:true, stacked:true}}}
   });
 
