@@ -784,7 +784,20 @@ input[type=date]{background:transparent;border:none;color:#ccc;font-family:'DM S
     <!-- Fileira 4: Vendas por Dia — largura total -->
     <div style="margin-bottom:14px">
       <div class="card" style="padding:20px">
-        <div class="card-title">Vendas por Dia — Todos os Produtos</div>
+        <div style="display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:12px">
+          <div class="card-title" style="margin:0">Vendas por Dia — Todos os Produtos</div>
+          <div style="display:flex;gap:24px;align-items:baseline">
+            <div style="text-align:right">
+              <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)">Total de vendas</div>
+              <div id="diaProdTotVendas" style="font-family:'Bebas Neue',sans-serif;font-size:30px;line-height:1.1;color:var(--yellow)">-</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)">Faturamento bruto</div>
+              <div id="diaProdTotFat" style="font-family:'Bebas Neue',sans-serif;font-size:30px;line-height:1.1;color:var(--yellow)">-</div>
+            </div>
+          </div>
+        </div>
+        <div id="diaProdTotSub" style="font-size:11px;color:var(--muted);margin:2px 0 10px">-</div>
         <canvas id="kvChartDiaProd" height="120"></canvas>
       </div>
     </div>
@@ -3244,12 +3257,32 @@ function renderVendas(kiwify, metas, wp, rmktSpendDireto, totalAdsDireto, abando
       borderRadius: 4
     };
   });
+  // Totais do período: principais + todos os order bumps.
+  var totVendasDia = (k.vendas||0) + (k.bumpVendas||0);
+  var totFatDia    = (k.fatBruto||0) + (k.bumpFatBruto||0);
+  setEl('diaProdTotVendas', totVendasDia.toLocaleString('pt-BR'));
+  setEl('diaProdTotFat', fBRL(totFatDia));
+  setEl('diaProdTotSub',
+    'Principais: ' + (k.vendas||0).toLocaleString('pt-BR') + ' vendas · ' + fBRL(k.fatBruto||0) +
+    '   |   Order bumps: ' + (k.bumpVendas||0).toLocaleString('pt-BR') + ' vendas · ' + fBRL(k.bumpFatBruto||0) +
+    '   |   Ticket médio: ' + (totVendasDia > 0 ? fBRL(totFatDia/totVendasDia) : '-'));
+
   mkChart('kvChartDiaProd', {
     type:'bar',
     data:{labels:diasLbls, datasets:[
       {label:'Cromador Pro 2.0', data:diaMain, backgroundColor:'rgba(212,168,0,.85)', borderRadius:4}
     ].concat(diaBumps)},
-    options:{plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:10}}}}, scales:{x:{grid:{display:false}, stacked:true, ticks:{maxRotation:45}}, y:{grid:G, beginAtZero:true, stacked:true}}}
+    options:{
+      plugins:{
+        legend:{position:'bottom',labels:{boxWidth:10,font:{size:10}}},
+        tooltip:{callbacks:{footer:function(items){
+          // Total empilhado do dia — a soma das séries não é legível na barra.
+          var t = 0; items.forEach(function(i){ t += i.parsed.y || 0; });
+          return 'Total do dia: ' + t;
+        }}}
+      },
+      scales:{x:{grid:{display:false}, stacked:true, ticks:{maxRotation:45}}, y:{grid:G, beginAtZero:true, stacked:true}}
+    }
   });
 
   // horaVals legado (não usado mais mas manter compatibilidade)
