@@ -577,7 +577,7 @@ input[type=date]{background:transparent;border:none;color:#ccc;font-family:'DM S
     <div class="section-label">Cromador Pro 2.0 — Visão Geral de Vendas</div>
     <div class="grid-vendas-top">
       <div class="bn" style="position:relative">
-        <div class="bn-info">ⓘ<span class="bn-tooltip">Vendas confirmadas (status paid) no período filtrado.<br>Hoje vs ontem = comparativo do dia atual.<br>% meta = progresso em relação à meta do lançamento.</span></div>
+        <div class="bn-info">ⓘ<span class="bn-tooltip">Vendas confirmadas = pedidos únicos (order_ref) com status paid no período.<br>Aguardando pagamento e recusados não contam.<br>Pedido estornado é removido da contagem.<br>Hoje vs ontem = comparativo do dia atual.<br>% meta = progresso em relação à meta do lançamento.</span></div>
         <div class="bn-lbl">Vendas Confirmadas</div>
         <div class="bn-val" id="kvVendas" style="font-size:44px">-</div>
         <div style="margin-top:5px">
@@ -587,7 +587,7 @@ input[type=date]{background:transparent;border:none;color:#ccc;font-family:'DM S
         <canvas id="kvVendasDonut" width="52" height="52" style="position:absolute;top:36px;right:12px"></canvas>
       </div>
       <div class="bn" style="position:relative">
-        <div class="bn-info">ⓘ<span class="bn-tooltip">Faturamento Bruto = Vendas × R$ 797 (ticket fixo).<br>Hoje vs ontem = comparativo do dia.<br>% meta = progresso em relação à meta financeira do lançamento.</span></div>
+        <div class="bn-info">ⓘ<span class="bn-tooltip">Faturamento Bruto = soma do valor real cobrado nas vendas confirmadas (inclui juros de parcelamento).<br>Não inclui pedidos estornados.<br>Hoje vs ontem = comparativo do dia.<br>% meta = progresso em relação à meta financeira do lançamento.</span></div>
         <div class="bn-lbl">Faturamento Bruto</div>
         <div class="bn-val" id="kvFat" style="font-size:36px">-</div>
         <div style="margin-top:5px">
@@ -1118,12 +1118,8 @@ function renderDebriefingVendas(){
 function renderDb2Origem(){
   var k=window._dbKiwify;
   if(!k||!k._rows) return;
-  // Filtrar apenas os 3 produtos do lançamento + status paid
-  var rows=k._rows.filter(function(r){
-    var st=(r['order_status']||'').toLowerCase();
-    var prod=(r['Product_product_name']||'').trim();
-    return (st==='paid'||st==='paided') && isProdutoLanc(prod);
-  });
+  // Regra única de venda: ref único, pago, não estornado
+  var rows=vendasValidas(k._rows, isProdutoLanc);
 
   // Por utm_source — categorizado por canal com cores
   var canalMap = {};
@@ -1266,12 +1262,8 @@ function setDb2OrigemMode(mode){
   _db2OrigemMode=mode;
   var k=window._dbKiwify;
   if(!k||!k._rows) return;
-  // Filtrar apenas os 3 produtos do lançamento + status paid
-  var rows=k._rows.filter(function(r){
-    var st=(r['order_status']||'').toLowerCase();
-    var prod=(r['Product_product_name']||'').trim();
-    return (st==='paid'||st==='paided') && isProdutoLanc(prod);
-  });
+  // Regra única de venda: ref único, pago, não estornado
+  var rows=vendasValidas(k._rows, isProdutoLanc);
   var CANAL_CORES_D={'YouTube':'#ef4444','WhatsApp':'#16a34a','Instagram':'#8b5cf6','Comercial':'#6b7280','Outros':'#d4a800','Sem Tracking':'#4b5563'};
   var map={};
   rows.forEach(function(r){
@@ -1522,16 +1514,14 @@ function renderDbDim(){
     var utmFields=Object.keys(sampleR).filter(function(k){return k.toLowerCase().indexOf('utm')>=0||k.toLowerCase().indexOf('source')>=0||k.toLowerCase().indexOf('medium')>=0||k.toLowerCase().indexOf('content')>=0||k.toLowerCase().indexOf('campaign')>=0;});
     console.log('[DB] UTM fields disponíveis:', utmFields, '| Amostra:', sampleR[field], '| Field:', field);
   }
-  k._rows.forEach(function(r){
+  vendasValidas(k._rows, function(p){ return PRODS.indexOf(p) >= 0; }).forEach(function(r){
     var prod=(r['Product_product_name']||r['product_name']||'').trim();
-    if(PRODS.indexOf(prod)<0) return;
-    var st=(r['order_status']||'').toLowerCase();
-    if(st!=='paid'&&st!=='paided') return;
     // Tentar múltiplos nomes de campo para UTM
     var fieldAlt=field;
     var val=(r[field]||r[field.replace('utm_','')]||r['Utm_'+field.slice(4)]||'').trim();
     var key=val||'Sem tracking';
-    var fat=parseFloat((r['sale_value']||r['price']||'0').replace(',','.'))||797;
+    // sale_value/price não existem na planilha — caía sempre no ticket fixo
+    var fat=brutoKiwify(r);
     if(!grupos[key]) grupos[key]={vendas:0,fat:0,crom:0,bump:0};
     grupos[key].vendas++;
     grupos[key].fat+=fat;
@@ -1580,9 +1570,7 @@ function renderDbVendedoras(){
   }
   // Agregar por vendedora via utm_medium
   var vends={};
-  k._rows.forEach(function(r){
-    var st=(r['order_status']||'').toLowerCase();
-    if(st!=='paid'&&st!=='paided') return;
+  vendasValidas(k._rows, null).forEach(function(r){
     var med=(r['utm_medium']||'').toLowerCase();
     var nome='';
     if(med.indexOf('larissa')>=0) nome='Larissa';
@@ -1590,7 +1578,7 @@ function renderDbVendedoras(){
     else if(med.indexOf('kamilly')>=0||med.indexOf('kamily')>=0) nome='Kamilly';
     else if(med.indexOf('ray')>=0) nome='Ray';
     if(!nome) return;
-    var fat=parseFloat((r['sale_value']||r['price']||'0').replace(',','.'))||797;
+    var fat=brutoKiwify(r);
     if(!vends[nome]) vends[nome]={vendas:0,fat:0};
     vends[nome].vendas++;
     vends[nome].fat+=fat;
@@ -1714,6 +1702,47 @@ const ORDER_BUMPS_NORM = ORDER_BUMPS.map(normStr);
 const TODOS_PRODUTOS_NORM = TODOS_PRODUTOS.map(normStr);
 function isOrderBump(v)     { return ORDER_BUMPS_NORM.indexOf(normStr(v)) >= 0; }
 function isProdutoLanc(v)   { return TODOS_PRODUTOS_NORM.indexOf(normStr(v)) >= 0; }
+
+// ── Regra de venda ────────────────────────────────────────────────────────
+// Uma transação é VENDA quando: order_ref único + status 'paid'.
+// waiting_payment/refused não são venda. Estorno remove o order_ref da contagem.
+// 'paided' NÃO conta: é ruído intermediário de webhook — o mesmo pedido sempre
+// grava uma linha 'paid' depois, então contar duplicaria a venda.
+const PAGO_STATUS    = {'paid':1};
+const ESTORNO_STATUS = {'refunded':1, 'refundeded':1, 'chargedback':1, 'chargeback':1};
+
+// Bruto real da transação. Commissions_charge_amount vem em CENTAVOS na planilha
+// (79700 = R$ 797,00) e confere 100% com "Total com acréscimo" do export Kiwify.
+// Cai no ticket de referência só se a linha não tiver o valor.
+function brutoKiwify(r) {
+  var c = parseFloat(String(r['Commissions_charge_amount'] || '').replace(/[^0-9.-]/g,''));
+  return isFinite(c) && c > 0 ? c / 100 : TICKET;
+}
+
+// Fonte única da regra: recebe as linhas cruas (log de webhook) e devolve UMA
+// linha por venda válida. Usar em qualquer recorte para não existirem duas
+// definições de venda no arquivo.
+function vendasValidas(rows, filtroProduto) {
+  var estornado = {}, vistos = {}, out = [];
+  function ok(p){ return !filtroProduto || filtroProduto(p); }
+  rows.forEach(function(r){
+    var ref = (r['order_ref'] || '').trim();
+    var prod = (r['Product_product_name'] || '').trim();
+    if (!ref || !ok(prod)) return;
+    if (ESTORNO_STATUS[(r['order_status'] || '').trim().toLowerCase()]) estornado[ref+'_'+normStr(prod)] = true;
+  });
+  rows.forEach(function(r){
+    var ref = (r['order_ref'] || '').trim();
+    var prod = (r['Product_product_name'] || '').trim();
+    if (!ref || !ok(prod)) return;
+    if (!PAGO_STATUS[(r['order_status'] || '').trim().toLowerCase()]) return;
+    var chave = ref+'_'+normStr(prod);
+    if (vistos[chave] || estornado[chave]) return;
+    vistos[chave] = true;
+    out.push(r);
+  });
+  return out;
+}
 
 const INVEST_LEAGUELEAD = 10392.41; // investimento fixo LeagueLead — só CNP1 (0426)
 
@@ -1961,7 +1990,8 @@ function processKiwify(rows, d1, d2) {
   var vendas=0, fat=0, reembolsos=0, fatReemb=0, aguardando=0;
   // bumpRefs evita contar duas vezes o mesmo order bump quando o webhook da Kiwify
   // reentrega o evento e a Página1 grava a linha repetida (visto em 10-11/08/2026).
-  var paidRefs = {}, refundedRefs = {}, bumpRefs = {};
+  var paidRefs = {}, refundedRefs = {}, bumpRefs = {}, aguardandoRefs = {};
+  var fatBruto=0, fatBrutoReemb=0;   // bruto real somado de Commissions_charge_amount
   var byDia={}, bySemDia={}, byHora={}, byProduto={};
   // Order bumps — estruturas paralelas
   var bumpVendas=0, bumpFat=0, bumpReembolsos={}, bumpFatProd={};  // bumpReembolsos: prod→count
@@ -2060,9 +2090,19 @@ function processKiwify(rows, d1, d2) {
     var cont   = (r['TrackingParameters_utm_content']  || '').trim();
     var med    = (r['TrackingParameters_utm_medium']   || '').trim();
 
-    if (status === 'paid' && ref && !paidRefs[ref] && isProdutoExato) {
+    if (PAGO_STATUS[status] && ref && !paidRefs[ref] && isProdutoExato) {
       paidRefs[ref] = fat_v;
-      vendas++; fat += fat_v;
+
+      // Estornado deixa de ser venda: conta como reembolso e não entra em
+      // nenhum recorte (dia/hora/UTM/plataforma/pagamento/vendedor).
+      if (refundedRefs[ref]) {
+        reembolsos++;
+        fatReemb      += fat_v;
+        fatBrutoReemb += brutoKiwify(r);
+        return;
+      }
+
+      vendas++; fat += fat_v; fatBruto += brutoKiwify(r);
       if (email) {
         if (isProdutoExato) emailsSet[email] = true;
         // Track products per email for cross-sell — registra TODOS os produtos pagos do email
@@ -2073,8 +2113,8 @@ function processKiwify(rows, d1, d2) {
       if (tel)   telefonesSet[tel] = true;
 
       // Por dia
-      if (!byDia[data]) byDia[data] = {vendas:0, fat:0};
-      byDia[data].vendas++; byDia[data].fat += fat_v;
+      if (!byDia[data]) byDia[data] = {vendas:0, fat:0, fatBruto:0};
+      byDia[data].vendas++; byDia[data].fat += fat_v; byDia[data].fatBruto += brutoKiwify(r);
 
       // Por dia da semana
       try {
@@ -2102,9 +2142,10 @@ function processKiwify(rows, d1, d2) {
 
       // Por plataforma — mesmas categorias do debriefing
       var plat = srcToCanal(src);
-      if (!byPlataforma[plat]) byPlataforma[plat] = {vendas:0, fat:0};
+      if (!byPlataforma[plat]) byPlataforma[plat] = {vendas:0, fat:0, fatBruto:0};
       byPlataforma[plat].vendas++;
       byPlataforma[plat].fat += fat_v;
+      byPlataforma[plat].fatBruto += brutoKiwify(r);
 
       // Classificação Origem: Meta Ads / Afiliado / Sem Tracking
       var srcL = src.toLowerCase();
@@ -2146,8 +2187,13 @@ function processKiwify(rows, d1, d2) {
     }
 
     // ── ORDER BUMPS ───────────────────────────────────────────────────────────
-    if ((status === 'paid' || status === 'paided') && isOrderBump(prod) && ref && !bumpRefs[ref+'_'+normStr(prod)]) {
+    if (PAGO_STATUS[status] && isOrderBump(prod) && ref && !bumpRefs[ref+'_'+normStr(prod)]) {
       bumpRefs[ref+'_'+normStr(prod)] = true;
+      // Estorno também remove o bump da contagem.
+      if (refundedRefs[ref+'_'+prod]) {
+        bumpReembolsos[prod] = (bumpReembolsos[prod]||0) + 1;
+        return;
+      }
       bumpVendas++; bumpFat += fat_v;
       bumpFatProd[prod] = (bumpFatProd[prod]||0) + fat_v;
       // Por dia
@@ -2182,12 +2228,22 @@ function processKiwify(rows, d1, d2) {
     if (status === 'refunded' && ref && isProdutoExato && paidRefs[ref] !== undefined) {
       fatReemb += paidRefs[ref]; // faturamento do reembolso (só se paid existe)
     }
-    if ((status === 'waiting_payment' || status === 'pending') && isProdutoExato) aguardando++;
+    // Aguardando pagamento: por PEDIDO, não por linha. A planilha é log de
+    // webhook — o mesmo pix grava pix_created e depois order_approved.
+    if ((status === 'waiting_payment' || status === 'pending') && ref && isProdutoExato) {
+      aguardandoRefs[ref] = true;
+    }
   });
+
+  // Ref que depois foi pago ou estornado não está mais aguardando.
+  aguardando = Object.keys(aguardandoRefs).filter(function(ref){
+    return paidRefs[ref] === undefined && !refundedRefs[ref];
+  }).length;
 
   return {
     _rows:rows,
-    vendas:vendas, fat:fat, reembolsos:reembolsos, fatReemb:fatReemb, aguardando:aguardando, vendasPagas:vendasPagas, byPlataforma:byPlataforma, byOrigemCat:byOrigemCat, byPublicoCat:byPublicoCat,
+    vendas:vendas, fat:fat, fatBruto:fatBruto, fatBrutoReemb:fatBrutoReemb,
+    reembolsos:reembolsos, fatReemb:fatReemb, aguardando:aguardando, vendasPagas:vendasPagas, byPlataforma:byPlataforma, byOrigemCat:byOrigemCat, byPublicoCat:byPublicoCat,
     byDia:byDia, bySemDia:bySemDia, byHora:byHora, byProduto:byProduto,
     bumpVendas:bumpVendas, bumpFat:bumpFat, bumpReembolsos:bumpReembolsos, bumpFatProd:bumpFatProd,
     bumpByDia:bumpByDia, bumpBySemDia:bumpBySemDia, bumpByHora:bumpByHora, bumpByPag:bumpByPag,
@@ -2540,7 +2596,10 @@ function renderVendas(kiwify, metas, wp, rmktSpendDireto, totalAdsDireto, abando
   var conv = leadsTotal > 0 ? k.vendas / leadsTotal * 100 : 0;
 
   // ── Faturamento Bruto = Vendas × Ticket fixo R$ 797 ─────────────────────────
-  var fatBruto = k.vendas * TICKET;
+  // Soma do valor realmente cobrado, não vendas × ticket fixo: parcelamento com
+  // juros e ofertas diferentes fazem o ticket real variar (R$797 a R$989 na base
+  // atual), o que subestimava o bruto em ~12%.
+  var fatBruto = k.fatBruto;
 
   // ── ROAS = Faturamento Bruto / Investido em RMKT ──────────────────────────
   roas = rmktSpend > 0 ? fatBruto / rmktSpend : 0;
@@ -2561,8 +2620,8 @@ function renderVendas(kiwify, metas, wp, rmktSpendDireto, totalAdsDireto, abando
   var yesterday = new Date(Date.now() - 86400000).toISOString().slice(0,10);
   var vendasHoje   = (k.byDia[today]    || {vendas:0}).vendas;
   var vendasOntem  = (k.byDia[yesterday]|| {vendas:0}).vendas;
-  var fatHoje      = vendasHoje  * TICKET;
-  var fatOntem     = vendasOntem * TICKET;
+  var fatHoje      = (k.byDia[today]     || {}).fatBruto || 0;
+  var fatOntem     = (k.byDia[yesterday] || {}).fatBruto || 0;
 
   function deltaHoje(hoje, ontem, fmt) {
     var txt = 'Hoje: ' + fmt(hoje);
@@ -2865,7 +2924,7 @@ function renderVendas(kiwify, metas, wp, rmktSpendDireto, totalAdsDireto, abando
   var platEntries = Object.entries(k.byPlataforma).sort(function(a,b){return b[1].vendas - a[1].vendas;});
   var platLabels  = platEntries.map(function(e){return e[0];});
   var platVendas  = platEntries.map(function(e){return e[1].vendas;});
-  var platFat     = platEntries.map(function(e){return e[1].vendas * TICKET;}); // Fat Bruto por plataforma
+  var platFat     = platEntries.map(function(e){return e[1].fatBruto || 0;}); // Fat Bruto real por plataforma
   var platCols    = platLabels.map(platCor);
 
   // Donut: distribuição de vendas por plataforma
@@ -2879,9 +2938,9 @@ function renderVendas(kiwify, metas, wp, rmktSpendDireto, totalAdsDireto, abando
   });
 
   // Pareto: Faturamento Bruto por plataforma (barras ordenadas desc)
-  var paretoEntries = platEntries.slice().sort(function(a,b){return (b[1].vendas*TICKET)-(a[1].vendas*TICKET);});
+  var paretoEntries = platEntries.slice().sort(function(a,b){return (b[1].fatBruto||0)-(a[1].fatBruto||0);});
   var paretoLabels  = paretoEntries.map(function(e){return e[0];});
-  var paretoFat     = paretoEntries.map(function(e){return e[1].vendas*TICKET;});
+  var paretoFat     = paretoEntries.map(function(e){return e[1].fatBruto||0;});
   var paretoCols    = paretoLabels.map(platCor);
   // Linha acumulada
   var paretoTot = paretoFat.reduce(function(s,v){return s+v;},0)||1;

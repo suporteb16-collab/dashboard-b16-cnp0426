@@ -1,0 +1,6 @@
+# Este repo é público (serve o GitHub Pages). Nunca versionar dado de cliente.
+# Exports da Kiwify trazem nome, e-mail, CPF, celular, IP e endereço.
+dados_kiwify.csv
+dados_*.csv
+*_kiwify.csv
+*.xlsx
