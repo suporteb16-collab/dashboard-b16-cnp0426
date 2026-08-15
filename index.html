@@ -2009,16 +2009,33 @@ function srcToCanal(s) {
   return 'Outros';
 }
 
+// Classifica a origem da venda pela NATUREZA do canal.
+// Antes só reconhecia criativo numerado (Meta) e nome próprio (afiliado) — padrão
+// do CNP0426. No CNP0726 o utm_source traz o canal em minúsculas (youtube,
+// whatsapp, clint), então tudo caía em 'Outros' e o card exibia 98,3% "Sem
+// Tracking" mesmo com tracking presente em 97% das vendas.
 function srcToPlat(s) {
   if (!s) return 'Sem Tracking';
-  // Vídeos numerados = Meta Ads (ex: "001 - VID - ...")
-  if (/^\d{3}\s*-\s*vid/i.test(s)) return 'Meta Ads';
-  // Criativos AD = Meta Ads (ex: "AD01 - ...")
-  if (/^ad\d+/i.test(s)) return 'Meta Ads';
-  // Nomes próprios = Afiliado (ex: "ARILDO RAMOS", "Gilmario Carlos Da Silva")
-  if (/^[A-ZÁÉÍÓÚÀÂÊÎÔÛÃÕÇ]/.test(s)) return 'Afiliado';
+  var v = normStr(s);
+  if (/whats|wpp|clint|apioficial|api-oficial|mensagem/.test(v)) return 'CRM / WhatsApp';
+  if (/youtube|instagram|facebook|tiktok/.test(v))               return 'Social';
+  if (/qrcode/.test(v))                                          return 'Offline';
+  if (/kiwify/.test(v))                                          return 'Kiwify';
+  // Padrões herdados do CNP0426: criativo numerado e nome próprio de afiliado.
+  if (/^\d{3}\s*-\s*vid/.test(v) || /^ad\d+/.test(v))            return 'Meta Ads';
+  if (/^[A-ZÁÉÍÓÚÀÂÊÎÔÛÃÕÇ]/.test(String(s).trim()))             return 'Afiliado';
   return 'Outros';
 }
+const ORIGEM_CORES = {
+  'CRM / WhatsApp': '#16a34a',
+  'Social':         '#ef4444',
+  'Meta Ads':       '#3b82f6',
+  'Afiliado':       '#d4a800',
+  'Offline':        '#8b5cf6',
+  'Kiwify':         '#14b8a6',
+  'Outros':         '#9ca3af',
+  'Sem Tracking':   '#4b5563'
+};
 
 function processKiwify(rows, d1, d2) {
   var DATA_INI = KIWIFY_DATA_INI;
@@ -2179,15 +2196,18 @@ function processKiwify(rows, d1, d2) {
       byPlataforma[plat].fat += fat_v;
       byPlataforma[plat].fatBruto += brutoKiwify(r);
 
-      // Classificação Origem: Meta Ads / Afiliado / Sem Tracking
+      // Classificação Origem: natureza do canal (CRM / Social / Offline / ...).
+      // Não converter 'Outros' em 'Sem Tracking': são coisas diferentes —
+      // 'Outros' é utm desconhecido, 'Sem Tracking' é utm ausente. Misturar os
+      // dois era o que fazia o card reportar 98,3% sem tracking.
       var srcL = src.toLowerCase();
-      var origemCat = srcToPlat(src); // reutiliza mesma função
-      if (origemCat === 'Outros') origemCat = 'Sem Tracking';
+      var origemCat = srcToPlat(src);
       if (!byOrigemCat[origemCat]) byOrigemCat[origemCat] = 0;
       byOrigemCat[origemCat]++;
 
-      // Classificação Público: Meta Ads / Afiliado / Sem Tracking (mesmo que origem)
-      var publicoCat = origemCat;
+      // Classificação Público: utm_medium (chat, api-oficial, offline, bio…),
+      // que é a dimensão de publico/veiculo — antes repetia a origem.
+      var publicoCat = med ? med : 'Sem Tracking';
       if (!byPublicoCat[publicoCat]) byPublicoCat[publicoCat] = 0;
       byPublicoCat[publicoCat]++;
 
@@ -2894,13 +2914,18 @@ function renderVendas(kiwify, metas, wp, rmktSpendDireto, totalAdsDireto, abando
   var _origemChartInst = null;
   var _origemMode = 'origem';
 
-  var origemCores = {
-    'Orgânico':      '#16a34a',
-    'Pago':          '#d4a800',
-    'Sem Tracking':  '#9ca3af',
-    'Quente':        '#ef4444',
-    'Frio':          '#3b82f6',
-  };
+  // Categorias de origem (ORIGEM_CORES, global) + as de público (utm_medium).
+  var origemCores = Object.assign({}, ORIGEM_CORES, {
+    'chat':         '#16a34a',
+    'api-oficial':  '#3b82f6',
+    'offline':      '#8b5cf6',
+    'bio':          '#ef4444',
+    'organico':     '#14b8a6',
+    'Orgânico':     '#16a34a',
+    'Pago':         '#d4a800',
+    'Quente':       '#ef4444',
+    'Frio':         '#3b82f6'
+  });
 
   function renderOrigemDonut(data, title) {
     var el = document.getElementById('kvOrigemDonut');
@@ -2952,14 +2977,17 @@ function renderVendas(kiwify, metas, wp, rmktSpendDireto, totalAdsDireto, abando
   renderOrigemDonut(_origemData, 'Distribuição por Origem');
 
   // ── PLATAFORMA ─────────────────────────────────────────────────────────────
+  // A chave era 'Youtube', mas srcToCanal devolve 'YouTube' (T maiúsculo), então
+  // o YouTube caía no cinza padrão. 'Sem Tracking' também não existia no mapa.
   var platCoresMap = {
-    'Youtube':   '#ff0000',
-    'Instagram': '#e1306c',
-    'WhatsApp':  '#25d366',
-    'Email':     '#a855f7',
-    'Comercial': '#3b82f6',
-    'SMS':       '#f59e0b',
-    'Outros':    '#9ca3af',
+    'YouTube':      '#ef4444',  // vermelho
+    'WhatsApp':     '#16a34a',  // verde
+    'Instagram':    '#8b5cf6',  // roxo
+    'Outros':       '#9ca3af',  // cinza
+    'Sem Tracking': '#4b5563',  // cinza escuro
+    'Comercial':    '#3b82f6',
+    'Email':        '#a855f7',
+    'SMS':          '#f59e0b'
   };
   function platCor(p){ return platCoresMap[p] || '#9ca3af'; }
 
