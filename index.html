@@ -597,7 +597,7 @@ input[type=date]{background:transparent;border:none;color:#ccc;font-family:'DM S
         <canvas id="kvFatDonut" width="52" height="52" style="position:absolute;top:36px;right:12px"></canvas>
       </div>
       <div class="bn" style="position:relative">
-        <div class="bn-info">ⓘ<span class="bn-tooltip">ROAS = Faturamento Bruto ÷ Investimento RMKT.<br>Considera apenas vendas pagas (exclui orgânicas).<br>Roda mostra % atingido da meta de ROAS.</span></div>
+        <div class="bn-info">ⓘ<span class="bn-tooltip">ROAS = Receita bruta ÷ Investimento em mídia (Meta [CNP] + Google Ads).<br>Receita inclui produtos principais e order bumps.<br>Roda mostra % atingido da meta de ROAS.</span></div>
         <div class="bn-lbl">ROAS</div>
         <div class="bn-val" id="kvRoas" style="font-size:44px">-</div>
         <canvas id="kvRoasDonut" width="52" height="52" style="position:absolute;top:36px;right:12px"></canvas>
@@ -605,13 +605,13 @@ input[type=date]{background:transparent;border:none;color:#ccc;font-family:'DM S
     </div>
     <div class="grid-vendas-bot" style="grid-template-columns:repeat(5,1fr)">
       <div class="bn" style="position:relative">
-        <div class="bn-info">ⓘ<span class="bn-tooltip">Total investido em campanhas Meta Ads com tag [RMKT] no período.</span></div>
-        <div class="bn-lbl">Investido em RMKT</div>
+        <div class="bn-info">ⓘ<span class="bn-tooltip">Investimento em mídia no período: campanhas Meta Ads com tag [CNP] + Google Ads.<br>É o denominador do ROAS e do CAC.<br>Só remarketing [RMKT] aparece no detalhe abaixo.</span></div>
+        <div class="bn-lbl">Investido em Mídia</div>
         <div class="bn-val" id="bnRmktSpend" style="font-size:28px">-</div>
-        <div class="bn-sub" id="bnRmktSub">Campanhas Meta Ads [RMKT]</div>
+        <div class="bn-sub" id="bnRmktSub">Meta [CNP] + Google Ads</div>
       </div>
       <div class="bn" style="position:relative">
-        <div class="bn-info">ⓘ<span class="bn-tooltip">CAC = Investimento RMKT ÷ Vendas pagas via mídia paga.<br>Exclui origens orgânicas: YouTube chat, Instagram bio, QR code e vazio.</span></div>
+        <div class="bn-info">ⓘ<span class="bn-tooltip">CAC = Investimento em mídia ÷ Vendas dos produtos principais.<br>Order bump não conta como cliente novo — é adicional do mesmo comprador.</span></div>
         <div class="bn-lbl">CAC</div>
         <div class="bn-val" id="kvCAC" style="font-size:36px">-</div>
       </div>
@@ -628,10 +628,10 @@ input[type=date]{background:transparent;border:none;color:#ccc;font-family:'DM S
         <div class="bn-sub" id="kvInvestTotalSub">Meta + Google + LeagueLead</div>
       </div>
       <div class="bn" style="position:relative">
-        <div class="bn-info">ⓘ<span class="bn-tooltip">ROI = Faturamento Bruto ÷ Investimento Total.<br>Indica quantas vezes o investimento foi multiplicado em faturamento.</span></div>
+        <div class="bn-info">ⓘ<span class="bn-tooltip">ROI = Receita bruta ÷ Investimento Total (mídia + custos fixos do lançamento).<br>Indica quantas vezes o investimento voltou em faturamento.</span></div>
         <div class="bn-lbl">ROI</div>
         <div class="bn-val" id="kvROI" style="font-size:44px">-</div>
-        <div class="bn-sub" id="kvROISub">Fat. Bruto / Invest. Total</div>
+        <div class="bn-sub" id="kvROISub">Receita / Invest. Total</div>
       </div>
     </div>
 
@@ -1671,7 +1671,9 @@ const SHEET_ID_PLANILHA = '18P5vXW0yTStYUtz4_TKLqp0W47L6mDCWDJZN_ODRw4k';
 const ABANDONO_CSV_URL  = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID_PLANILHA
   + '/gviz/tq?tqx=out:csv&sheet=' + encodeURIComponent('Abandonos');
 const KIWIFY_DATA_INI = '2026-05-11';
-const PRODUTO_EXATO   = 'Cromador Pro 2.0'; // filtro exato de produto
+const PRODUTO_EXATO   = 'Cromador Pro 2.0'; // produto principal usado em rótulos
+// Produtos principais do lançamento (contam em Vendas Confirmadas).
+const PRODUTOS_PRINCIPAIS = ['Cromador Pro 2.0', 'Cromador Pro'];
 
 // Normaliza string para comparação tolerante (evita zerar vendas por diferença de
 // maiúsculas/minúsculas, acentos ou espaços extras vindos da planilha Kiwify).
@@ -1681,21 +1683,20 @@ function normStr(s) {
     .trim().toLowerCase().replace(/\s+/g, ' ');
 }
 const PRODUTO_EXATO_NORM = normStr(PRODUTO_EXATO);
-function isProduto(v) { return normStr(v) === PRODUTO_EXATO_NORM; }
+const PRINCIPAIS_NORM = PRODUTOS_PRINCIPAIS.map(normStr);
+// Vale para os dois produtos principais (Cromador Pro 2.0 e Cromador Pro).
+function isProduto(v) { return PRINCIPAIS_NORM.indexOf(normStr(v)) >= 0; }
 
-// Order bumps / produtos secundários vendidos no lançamento.
-// A Kiwify grava o MESMO produto com grafias diferentes ("Galvanizado Pro -1.0" e
-// "Galvanizador Pro -1.0"), por isso a comparação é normalizada (normStr) e as duas
-// variantes ficam listadas. Conferido contra o export da Kiwify de 10-11/08/2026.
+// Order bumps: produtos vendidos junto, com order_ref próprio.
+// Comparação normalizada (normStr) para tolerar acento/caixa/espaço da planilha.
+// Classificação conferida contra o export da Kiwify de 10-11/08/2026.
 const ORDER_BUMPS     = [
-  'Pintura Eletrostática na Prática 1.0',
-  'Galvanizado Pro -1.0',
-  'Galvanizador Pro -1.0',
-  'Galvanizador Pro',
   'Calculadora de Prestação de Serviço',
-  'Cromador Pro'
+  'Pintura Eletrostática na Prática 1.0',
+  'Galvanizador Pro',
+  'Galvanizador Pro -1.0'
 ];
-const TODOS_PRODUTOS  = [PRODUTO_EXATO].concat(ORDER_BUMPS);
+const TODOS_PRODUTOS  = PRODUTOS_PRINCIPAIS.concat(ORDER_BUMPS);
 
 // Comparação normalizada: imune a acento, caixa e espaço duplo vindos da planilha.
 const ORDER_BUMPS_NORM = ORDER_BUMPS.map(normStr);
@@ -1991,10 +1992,10 @@ function processKiwify(rows, d1, d2) {
   // bumpRefs evita contar duas vezes o mesmo order bump quando o webhook da Kiwify
   // reentrega o evento e a Página1 grava a linha repetida (visto em 10-11/08/2026).
   var paidRefs = {}, refundedRefs = {}, bumpRefs = {}, aguardandoRefs = {};
-  var fatBruto=0, fatBrutoReemb=0;   // bruto real somado de Commissions_charge_amount
+  var fatBruto=0, fatBrutoReemb=0, bumpFatBruto=0;   // bruto real (Commissions_charge_amount)
   var byDia={}, bySemDia={}, byHora={}, byProduto={};
   // Order bumps — estruturas paralelas
-  var bumpVendas=0, bumpFat=0, bumpReembolsos={}, bumpFatProd={};  // bumpReembolsos: prod→count
+  var bumpVendas=0, bumpFat=0, bumpReembolsos={}, bumpFatProd={}, bumpVendasProd={};  // prod→count
   var bumpByDia={}, bumpBySemDia={}, bumpByHora={}, bumpByPag={};
   ORDER_BUMPS.forEach(function(p){ bumpReembolsos[p]=0; });
   var byUTMSource={}, byUTMTerm={}, byUTMContent={}, byUTMMedium={};
@@ -2050,23 +2051,19 @@ function processKiwify(rows, d1, d2) {
     };
   })();
 
-  // ── Pré-passe: reembolsos do produto no período do lançamento, deduplicado por ref ──
+  // ── Pré-passe: MARCA os order_ref estornados. Não conta aqui. ─────────────
+  // A contagem de reembolso é feita no passe principal, só para refs que foram
+  // efetivamente pagos dentro do período filtrado — contar aqui também
+  // duplicaria o número.
+  // Sem filtro de data: o estorno chega DEPOIS da venda e pode cair fora da
+  // janela, mas ainda assim precisa remover a venda da contagem.
   rows.forEach(function(r) {
     var st   = (r['order_status'] || '').trim().toLowerCase();
     var prod = (r['Product_product_name'] || '').trim();
     var ref  = (r['order_ref'] || '').trim();
-    var data = (r['Data Criacao'] || '').trim().slice(0,10);
-    // Janela do lançamento ativo. Antes era '2026-05-31' fixo (resquício do CNP0426),
-    // o que zerava os reembolsos de qualquer lançamento posterior.
-    if ((st === 'refunded' || st === 'refundeded') && ref && data >= DATA_INI && data <= JANELA_LANC.d2) {
-      if (isProduto(prod) && !refundedRefs[ref]) {
-        refundedRefs[ref] = true;
-        reembolsos++;
-      } else if (isOrderBump(prod) && !refundedRefs[ref+'_'+prod]) {
-        refundedRefs[ref+'_'+prod] = true;
-        bumpReembolsos[prod] = (bumpReembolsos[prod]||0) + 1;
-      }
-    }
+    if (!ref || !ESTORNO_STATUS[st]) return;
+    if (isProduto(prod))        refundedRefs[ref] = true;
+    else if (isOrderBump(prod)) refundedRefs[ref+'_'+prod] = true;
   });
 
   rows.forEach(function(r){
@@ -2194,8 +2191,9 @@ function processKiwify(rows, d1, d2) {
         bumpReembolsos[prod] = (bumpReembolsos[prod]||0) + 1;
         return;
       }
-      bumpVendas++; bumpFat += fat_v;
+      bumpVendas++; bumpFat += fat_v; bumpFatBruto += brutoKiwify(r);
       bumpFatProd[prod] = (bumpFatProd[prod]||0) + fat_v;
+      bumpVendasProd[prod] = (bumpVendasProd[prod]||0) + 1;
       // Por dia
       if (!bumpByDia[data]) bumpByDia[data] = {};
       bumpByDia[data][prod] = (bumpByDia[data][prod]||0) + 1;
@@ -2224,10 +2222,8 @@ function processKiwify(rows, d1, d2) {
       bumpByPag[pagNormB].vendas++; bumpByPag[pagNormB].fat += fat_v;
     }
 
-    // reembolsos já contados no pré-passe acima (sem filtro de data)
-    if (status === 'refunded' && ref && isProdutoExato && paidRefs[ref] !== undefined) {
-      fatReemb += paidRefs[ref]; // faturamento do reembolso (só se paid existe)
-    }
+    // fatReemb é acumulado no bloco de venda acima (quando o ref pago está
+    // marcado como estornado). Não somar aqui — duplicaria.
     // Aguardando pagamento: por PEDIDO, não por linha. A planilha é log de
     // webhook — o mesmo pix grava pix_created e depois order_approved.
     if ((status === 'waiting_payment' || status === 'pending') && ref && isProdutoExato) {
@@ -2245,7 +2241,7 @@ function processKiwify(rows, d1, d2) {
     vendas:vendas, fat:fat, fatBruto:fatBruto, fatBrutoReemb:fatBrutoReemb,
     reembolsos:reembolsos, fatReemb:fatReemb, aguardando:aguardando, vendasPagas:vendasPagas, byPlataforma:byPlataforma, byOrigemCat:byOrigemCat, byPublicoCat:byPublicoCat,
     byDia:byDia, bySemDia:bySemDia, byHora:byHora, byProduto:byProduto,
-    bumpVendas:bumpVendas, bumpFat:bumpFat, bumpReembolsos:bumpReembolsos, bumpFatProd:bumpFatProd,
+    bumpVendas:bumpVendas, bumpFat:bumpFat, bumpFatBruto:bumpFatBruto, bumpReembolsos:bumpReembolsos, bumpFatProd:bumpFatProd, bumpVendasProd:bumpVendasProd,
     bumpByDia:bumpByDia, bumpBySemDia:bumpBySemDia, bumpByHora:bumpByHora, bumpByPag:bumpByPag,
     byUTMSource:byUTMSource, byUTMTerm:byUTMTerm, byUTMContent:byUTMContent, byUTMMedium:byUTMMedium,
     byVendedor:byVendedor, byPagamento:byPagamento,
@@ -2601,19 +2597,28 @@ function renderVendas(kiwify, metas, wp, rmktSpendDireto, totalAdsDireto, abando
   // atual), o que subestimava o bruto em ~12%.
   var fatBruto = k.fatBruto;
 
-  // ── ROAS = Faturamento Bruto / Investido em RMKT ──────────────────────────
-  roas = rmktSpend > 0 ? fatBruto / rmktSpend : 0;
+  // ── Investimento ──────────────────────────────────────────────────────────
+  var totalAds = totalAdsDireto || 0;                 // Meta [CNP] + Google Ads
+  var investTotal = totalAds + custosFixosTotal();    // + custos fixos do lançamento
+  var investCardDisplay = investTotal;                // card espelha o denominador do ROI
 
-  // ── Investimento Total = Meta + Google + LeagueLead ──────────────────────
-  var totalAds = totalAdsDireto || 0;
-  var investTotal = totalAds + custosFixosTotal(); // total real (inclui custos fixos do lançamento) — usado no ROI
-  var investCardDisplay = totalAds; // card mostra só Meta[CNP] + Google
+  // ── ROAS = Receita bruta total / Investimento em mídia ────────────────────
+  // Denominador é a mídia TOTAL (Meta + Google), não só as campanhas [RMKT].
+  // Dividir toda a receita pelo gasto de remarketing (3,4% da mídia) produzia
+  // um ROAS de ~269x, sem significado. Numerador inclui order bumps, porque a
+  // mesma mídia gera as duas receitas.
+  var receitaTotal = fatBruto + (k.bumpFatBruto || 0);
+  roas = totalAds > 0 ? receitaTotal / totalAds : 0;
 
-  // ── ROI = Faturamento Bruto / Investimento Total ──────────────────────────
-  var roi = investTotal > 0 ? fatBruto / investTotal : 0;
+  // ── ROI = Receita bruta total / Investimento total (mídia + custos fixos) ─
+  var roi = investTotal > 0 ? receitaTotal / investTotal : 0;
 
-  // ── CAC  = Investido em RMKT / Vendas Confirmadas ─────────────────────────
-  cac  = k.vendasPagas > 0 ? rmktSpend / k.vendasPagas : (k.vendas > 0 ? rmktSpend / k.vendas : 0); // só vendas pagas (mídia paga)
+  // ── CAC = Investimento em mídia / Vendas do produto principal ─────────────
+  // Usa vendas dos produtos principais: order bump não é cliente novo, é
+  // adicional do mesmo cliente. Antes dividia só o gasto [RMKT] por
+  // `vendasPagas`, que tratava qualquer venda com utm_source como mídia paga
+  // (os utm reais são youtube/whatsapp/clint/qrcode, canais de CRM/orgânico).
+  cac = k.vendas > 0 ? totalAds / k.vendas : 0;
 
   // ── Hoje vs ontem ─────────────────────────────────────────────────────────
   var today     = new Date().toISOString().slice(0,10);
@@ -2654,7 +2659,7 @@ function renderVendas(kiwify, metas, wp, rmktSpendDireto, totalAdsDireto, abando
 
   setEl('kvRoas',    roas > 0 ? roas.toFixed(2) : '-');
   setEl('kvInvestTotal', fBRL(investCardDisplay));
-  setEl('kvInvestTotalSub', 'Meta[CNP]: ' + fBRL(totalAds) + ' (LeagueLead na tabela)');
+  setEl('kvInvestTotalSub', 'Mídia ' + fBRL(totalAds) + ' + fixos ' + fBRL(custosFixosTotal()));
   setEl('kvROI',    roi > 0 ? roi.toFixed(1) : '-');
   setEl('kvROISub', 'Fat. Bruto / Invest. Total');
   setEl('kvCAC',     cac  > 0 ? fBRL(cac) : '-');
@@ -2666,8 +2671,11 @@ function renderVendas(kiwify, metas, wp, rmktSpendDireto, totalAdsDireto, abando
   if (metas.fat    > 0) mkDonutMeta('kvFatDonut',    fatBruto, metas.fat,    '#16a34a');
   if (metas.roas   > 0) mkDonutMeta('kvRoasDonut',   roas,     metas.roas,   '#3b82f6');
 
-  // ── RMKT ──────────────────────────────────────────────────────────────────
-  // bnRmktSpend já foi preenchido pelo bloco principal — apenas garantir dataset.raw
+  // ── Investido em Mídia ────────────────────────────────────────────────────
+  // O card mostra o denominador do ROAS/CAC (mídia total), não só [RMKT].
+  // dataset.raw guarda o gasto [RMKT] para o detalhamento de remarketing.
+  setEl('bnRmktSpend', fBRL(totalAds));
+  setEl('bnRmktSub', 'Meta [CNP] + Google · RMKT: ' + fBRL(rmktSpend));
   var bnEl = document.getElementById('bnRmktSpend');
   if (bnEl) bnEl.dataset.raw = rmktSpend;
   window._kiwifyGlobal = k; // para barra de progresso dos cenários
@@ -3673,8 +3681,11 @@ function renderDashboard(m, mAll, mp, wp, wpp, pesq, planRows, google, kiwify, m
       spendRmkt += mAll.byCamp[camp].spend || 0;
     }
   });
-  setEl('bnRmktSpend', fBRL(spendRmkt));
-  setEl('bnRmktSub', 'Campanhas Meta Ads com tag [RMKT]');
+  // O card "Investido em Mídia" é preenchido em renderVendas com a mídia total
+  // (denominador do ROAS/CAC). Aqui só guardamos o gasto [RMKT] no dataset para
+  // renderVendas compor o subtítulo — não sobrescrever o valor exibido.
+  var bnRmktEl = document.getElementById('bnRmktSpend');
+  if (bnRmktEl) bnRmktEl.dataset.raw = spendRmkt;
 
   // ── PREVISAO DE VENDAS ───────────────────────────────────────────────────────
   var totalLeadsVendas = wp.total || 0;
