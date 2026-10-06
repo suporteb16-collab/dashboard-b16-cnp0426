@@ -56,6 +56,30 @@ input[type=date]{background:transparent;border:none;color:#ccc;font-family:'DM S
 .tabs-nav{display:flex;gap:4px;margin-bottom:24px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:4px;width:fit-content}
 .tab-btn{background:transparent;border:none;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;color:var(--muted);padding:8px 20px;border-radius:7px;cursor:pointer;transition:all .2s}
 .tab-btn:hover{color:var(--text)}
+/* Icone de ajuda com a formula da metrica (tooltip nativo via title) */
+.ds-i{display:inline-block;margin-left:4px;color:var(--yellow);cursor:help;font-size:11px;vertical-align:super}
+/* Funil de video: 3 colunas (chip esquerda | etapa | chip direita) */
+.ds-funil{display:grid;grid-template-columns:1fr minmax(240px,420px) 1fr;gap:10px 18px;align-items:center;max-width:980px;margin:0 auto}
+.ds-fl{display:flex;justify-content:flex-end}
+.ds-fr{display:flex;justify-content:flex-start}
+.ds-fc{display:flex;flex-direction:column;align-items:center}
+.ds-chip{border:1px solid var(--border);border-radius:9px;padding:9px 14px;text-align:center;background:var(--card);min-width:150px}
+.ds-chip span{display:block;font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px}
+.ds-chip b{font-size:17px;font-weight:800}
+.ds-chip-c{margin-top:8px}
+.ds-step{width:100%;padding:16px 10px;text-align:center;color:#fff}
+.ds-st{font-size:12px;font-weight:600;opacity:.92}
+.ds-sv{font-size:28px;font-weight:800;line-height:1.15;font-family:'Bebas Neue',sans-serif;letter-spacing:.5px}
+/* trapezios: cada etapa mais estreita que a anterior */
+.ds-s1{background:#5b9bd5;clip-path:polygon(0 0,100% 0,92% 100%,8% 100%)}
+.ds-s2{background:#f2c200;clip-path:polygon(8% 0,92% 0,82% 100%,18% 100%);color:#111}
+.ds-s3{background:#2e9e4f;clip-path:polygon(18% 0,82% 0,70% 100%,30% 100%)}
+.ds-arrow{width:0;height:0;border-left:26px solid transparent;border-right:26px solid transparent;border-top:30px solid #d94a3d;margin-top:-1px}
+@media(max-width:760px){
+  .ds-funil{grid-template-columns:1fr}
+  .ds-fl,.ds-fr{justify-content:center}
+  .ds-fl:empty,.ds-fr:empty{display:none}
+}
 .tab-active{background:var(--black)!important;color:#fff!important}
 .main{max-width:1380px;margin:0 auto;padding:24px 32px 0}
 .section-label{font-size:9px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--black);margin-bottom:14px;display:flex;align-items:center;gap:10px}
@@ -372,6 +396,8 @@ input[type=date]{background:transparent;border:none;color:#ccc;font-family:'DM S
     <button class="tab-btn" id="tab-insights" onclick="switchTab('insights')">💡 Insights</button>
     <button class="tab-btn" id="tab-vendas" onclick="switchTab('vendas')">🛒 Vendas</button>
     <button class="tab-btn" id="tab-debriefing" onclick="switchTab('debriefing')">&#128196; Debriefing</button>
+    <button class="tab-btn" id="tab-distribuicao" onclick="switchTab('distribuicao')">&#128225; Distribuicao</button>
+    <button class="tab-btn" id="tab-instagram" onclick="switchTab('instagram')">&#128247; Instagram</button>
   </div>
 
   <!-- OVERVIEW -->
@@ -1074,6 +1100,181 @@ input[type=date]{background:transparent;border:none;color:#ccc;font-family:'DM S
   </div>
   <!-- /DEBRIEFING -->
 
+  <!-- DISTRIBUICAO -->
+  <div id="pane-distribuicao" style="display:none">
+
+    <div style="background:linear-gradient(135deg,#111 0%,#2a1a00 100%);border-radius:14px;padding:26px 32px;margin-bottom:20px">
+      <div style="font-size:10px;font-weight:700;letter-spacing:2px;color:var(--yellow);text-transform:uppercase;margin-bottom:5px">Mundial Cromo &middot; Meta Ads</div>
+      <div style="font-size:24px;font-weight:800;color:#fff">Distribuicao &mdash; Seguidores e Video</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.45);margin-top:3px">Periodo consolidado 01/04/2026 a 31/08/2026 &middot; cobre CNP1 e CNP2</div>
+    </div>
+
+    <!-- BIG NUMBERS -->
+    <div class="grid-bn" style="margin-bottom:22px">
+      <div class="card bn"><div class="bn-val" id="dsSeg">-</div><div class="bn-lbl">Seguidores ganhos</div></div>
+      <div class="card bn"><div class="bn-val" id="dsCps">-</div><div class="bn-lbl">Custo por seguidor</div></div>
+      <div class="card bn"><div class="bn-val" id="dsHook">-</div><div class="bn-lbl">Hook rate medio
+        <span class="ds-i" title="Hook rate = video_play_actions / impressions x 100&#10;Campo Meta: insights.video_play_actions&#10;Conta replays, por isso pode passar de 100%.">&#9432;</span></div></div>
+      <div class="card bn"><div class="bn-val" id="dsHold">-</div><div class="bn-lbl">Hold rate medio
+        <span class="ds-i" title="Hold rate = video_thruplay_watched_actions / impressions x 100&#10;Campo Meta: insights.video_thruplay_watched_actions&#10;ThruPlay = 15s assistidos ou video completo.">&#9432;</span></div></div>
+    </div>
+
+    <!-- NOTA METODOLOGICA -->
+    <div class="card" style="padding:14px 18px;margin-bottom:22px;border-left:3px solid var(--yellow)">
+      <div style="font-size:11px;line-height:1.7;color:var(--muted)">
+        <strong style="color:var(--text)">Campos usados.</strong>
+        <strong>Hook rate</strong> = <code>insights.video_play_actions</code> &divide; <code>insights.impressions</code> &times; 100 &middot;
+        <strong>Hold rate</strong> = <code>insights.video_thruplay_watched_actions</code> &divide; <code>insights.impressions</code> &times; 100.
+        A metrica de <em>visualizacoes de 3 segundos</em> nao existe na API do Meta (foi aposentada em favor do ThruPlay) e
+        <code>video_continuous_2_sec_watched_actions</code> retorna zero nesta conta &mdash; por isso o hook usa <em>video plays</em>,
+        que conta replays e pode passar de 100%. Use-o para comparar criativos entre si, nao como "% de pessoas que pararam".
+        <strong style="color:var(--text)">Seguidores</strong> vem do export do Gerenciador de Anuncios (colunas "Seguidores no Instagram" e
+        "Custo por seguidor"): o conector Stract nao expoe essa metrica.
+      </div>
+    </div>
+
+    <div class="section-label">Analise Detalhada &mdash; Video</div>
+    <div class="card" style="padding:26px 20px;margin-bottom:24px">
+      <div class="ds-funil">
+        <!-- etapa 1: impressoes -->
+        <div class="ds-fl">
+          <div class="ds-chip"><span>Custo por Mil Impressoes</span><b id="dsfCpm">-</b></div>
+        </div>
+        <div class="ds-fc">
+          <div class="ds-step ds-s1"><div class="ds-st">Impressoes</div><div class="ds-sv" id="dsfImp">-</div></div>
+        </div>
+        <div class="ds-fr">
+          <div class="ds-chip"><span>% que parou para assistir</span><b id="dsfPctPlay">-</b></div>
+        </div>
+
+        <!-- etapa 2: thruplays -->
+        <div class="ds-fl">
+          <div class="ds-chip"><span>Custo por ThruPlay</span><b id="dsfCtp">-</b></div>
+        </div>
+        <div class="ds-fc">
+          <div class="ds-step ds-s2"><div class="ds-st">Video Plays</div><div class="ds-sv" id="dsfPlays">-</div></div>
+        </div>
+        <div class="ds-fr">
+          <div class="ds-chip"><span>% ThruPlay / Plays</span><b id="dsfPctThru">-</b></div>
+        </div>
+
+        <!-- etapa 3 -->
+        <div class="ds-fl"></div>
+        <div class="ds-fc">
+          <div class="ds-step ds-s3"><div class="ds-st">ThruPlays</div><div class="ds-sv" id="dsfThru">-</div></div>
+          <div class="ds-arrow"></div>
+          <div class="ds-chip ds-chip-c"><span>Hold rate &mdash; ThruPlay / Impressoes</span><b id="dsfHold">-</b></div>
+        </div>
+        <div class="ds-fr"></div>
+      </div>
+      <div style="font-size:10px;color:var(--muted);text-align:center;margin-top:14px;line-height:1.6">
+        ThruPlay = 15s assistidos ou video completo (<code>insights.video_thruplay_watched_actions</code>) &middot;
+        Video Plays = <code>insights.video_play_actions</code>, conta replays &middot;
+        apenas criativos de video (imagens excluidas)
+      </div>
+    </div>
+
+    <div class="section-label">Seguidores por Fase de Campanha</div>
+    <div class="card" style="padding:18px;margin-bottom:20px"><canvas id="ds-g-fase" height="110"></canvas></div>
+
+    <div class="section-label">Campanhas que Mais Trouxeram Seguidores</div>
+    <div class="card" style="padding:18px;margin-bottom:24px;overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr style="border-bottom:2px solid var(--border)">
+            <th style="padding:10px 8px;color:var(--muted);font-weight:600;text-align:left">CAMPANHA</th>
+            <th style="padding:10px 8px;color:var(--muted);font-weight:600;text-align:right">SEGUIDORES</th>
+            <th style="padding:10px 8px;color:var(--muted);font-weight:600;text-align:right">INVEST.</th>
+            <th style="padding:10px 8px;color:var(--muted);font-weight:600;text-align:right">CUSTO/SEG</th>
+          </tr>
+        </thead>
+        <tbody id="ds-seg-body"></tbody>
+      </table>
+    </div>
+
+    <div class="section-label">Hook vs Hold por Criativo &mdash; Video</div>
+    <div class="card" style="padding:18px;margin-bottom:20px"><canvas id="ds-g-video" height="120"></canvas></div>
+
+    <div class="section-label">Performance de Video por Criativo</div>
+    <div class="card" style="padding:18px;margin-bottom:24px;overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr style="border-bottom:2px solid var(--border)">
+            <th style="padding:10px 8px;color:var(--muted);font-weight:600;text-align:left">CRIATIVO</th>
+            <th style="padding:10px 8px;color:var(--muted);font-weight:600;text-align:right">INVEST.</th>
+            <th style="padding:10px 8px;color:var(--muted);font-weight:600;text-align:right">IMPRESSOES</th>
+            <th style="padding:10px 8px;color:var(--muted);font-weight:600;text-align:right">HOOK %</th>
+            <th style="padding:10px 8px;color:var(--muted);font-weight:600;text-align:right">HOLD %</th>
+            <th style="padding:10px 8px;color:var(--muted);font-weight:600;text-align:right">R$/THRUPLAY</th>
+          </tr>
+        </thead>
+        <tbody id="ds-vid-body"></tbody>
+      </table>
+    </div>
+
+  </div>
+  <!-- /DISTRIBUICAO -->
+
+  <!-- INSTAGRAM -->
+  <div id="pane-instagram" style="display:none">
+
+    <div style="background:linear-gradient(135deg,#833ab4 0%,#fd1d1d 55%,#fcb045 100%);border-radius:14px;padding:26px 32px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+      <div>
+        <div style="font-size:10px;font-weight:700;letter-spacing:2px;color:rgba(255,255,255,.85);text-transform:uppercase;margin-bottom:5px">@mundialcromo</div>
+        <div style="font-size:24px;font-weight:800;color:#fff">Instagram Insights</div>
+        <div style="font-size:12px;color:rgba(255,255,255,.8);margin-top:3px" id="igSub">Atualizacao automatica diaria as 07h</div>
+      </div>
+      <a href="https://instagram.com/mundialcromo" target="_blank" rel="noopener"
+         style="background:rgba(255,255,255,.95);color:#111;border-radius:8px;padding:9px 16px;font-size:12px;font-weight:700;text-decoration:none">Acesse o Instagram &rarr;</a>
+    </div>
+
+    <div class="section-label">Insights Gerais</div>
+    <div class="grid-bn" style="margin-bottom:22px">
+      <div class="card bn"><div class="bn-val" id="igSeg">-</div><div class="bn-lbl">Seguidores</div></div>
+      <div class="card bn"><div class="bn-val" id="igGanho">-</div><div class="bn-lbl">Novos seguidores (periodo)</div></div>
+      <div class="card bn"><div class="bn-val" id="igPosts">-</div><div class="bn-lbl">Publicacoes</div></div>
+      <div class="card bn"><div class="bn-val" id="igMedia">-</div><div class="bn-lbl">Media de novos/dia</div></div>
+    </div>
+
+    <div class="section-label">Evolucao de Seguidores</div>
+    <div class="card" style="padding:18px;margin-bottom:20px"><canvas id="ig-g-seg" height="110"></canvas></div>
+
+    <div class="section-label">Ganho Diario de Seguidores</div>
+    <div class="card" style="padding:18px;margin-bottom:20px"><canvas id="ig-g-ganho" height="100"></canvas></div>
+
+    <div class="section-label">Historico Diario</div>
+    <div class="card" style="padding:18px;margin-bottom:20px;overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr style="border-bottom:2px solid var(--border)">
+            <th style="padding:10px 8px;color:var(--muted);font-weight:600;text-align:left">DATA</th>
+            <th style="padding:10px 8px;color:var(--muted);font-weight:600;text-align:right">SEGUIDORES</th>
+            <th style="padding:10px 8px;color:var(--muted);font-weight:600;text-align:right">GANHO NO DIA</th>
+            <th style="padding:10px 8px;color:var(--muted);font-weight:600;text-align:right">PUBLICACOES</th>
+          </tr>
+        </thead>
+        <tbody id="ig-body"></tbody>
+      </table>
+    </div>
+
+    <!-- Aviso de permissao: enquanto o app nao tiver acesso a insights, estas
+         secoes do modelo de referencia nao tem como ser preenchidas. -->
+    <div class="card" style="padding:16px 18px;margin-bottom:24px;border-left:3px solid #ef4444">
+      <div style="font-size:11px;line-height:1.75;color:var(--muted)">
+        <strong style="color:var(--text)">Pendente de permissao no Meta.</strong>
+        Alcance, impressoes, engajamento, desempenho por post, faixa etaria, genero e cidade
+        exigem os insights do perfil. Hoje a API responde
+        <code>(#10) application does not have permission for this action</code> para
+        <code>@mundialcromo</code> &mdash; a mesma consulta funciona em outros perfis da mesma conta,
+        entao e uma permissao especifica deste perfil, nao limitacao da ferramenta.
+        Para liberar: conceder <code>instagram_manage_insights</code> ao app do Stract no
+        Business Manager do perfil. Feito isso, estas secoes passam a preencher sozinhas.
+      </div>
+    </div>
+
+  </div>
+  <!-- /INSTAGRAM -->
+
 <script>
 
 
@@ -1677,6 +1878,276 @@ function dbRenderCriativos(){
   }).join('');
 }
 // === /DEBRIEFING ===
+
+// === DISTRIBUICAO (seguidores + video) ==================================
+// Dados consolidados 01/04/2026 a 31/08/2026 (cobre CNP1 e CNP2), vindos do
+// Supabase "trafego-pago": meta_seguidores_campanha_mundial (export manual do
+// Gerenciador de Anuncios) e meta_video_criativo_mundial (Stract/facebook_ads).
+//
+// Por que seguidor vem de export manual: o conector facebook_ads do Stract tem
+// 1.541 campos e nenhum de seguidor. Testado em actions.follow,
+// actions.onsite_conversion.follow, actions.onsite_conversion.ig_follow e
+// insights.results -- todos retornam 0 ou outra metrica, enquanto na mesma
+// consulta page_engagement e instagram_profile_visits trazem dados reais.
+var DS = {
+  periodo: '01/04/2026 a 31/08/2026',
+  tot:  { seg: 23364, spend: 157577.27 },
+  vid:  { imp: 33813380, plays: 30621955, thru: 7786088 },
+  // Funil: so criativos de video (video_plays > 0). Imagens entram em `vid`
+  // mas nao aqui, senao o "% que parou" sai diluido por quem nem tem video.
+  funil:{ imp: 31151737, plays: 30621955, thru: 7786088, spend: 145946.73 },
+  fase: [
+    {fase:'LEADS',    seg:11949, gasto:89508.09, cps:7.49},
+    {fase:'DIST',     seg:10107, gasto:36891.98, cps:3.65},
+    {fase:'VENDAS',   seg:887,   gasto:9358.11,  cps:10.55},
+    {fase:'LEMBRETE', seg:212,   gasto:10904.91, cps:51.44},
+    {fase:'RMKT',     seg:209,   gasto:10914.18, cps:52.22}
+  ],
+  camp: [
+    {c:'[DIST] Post IG: Banho de Cromo. Curso 100%...',      seg:5882, g:5012.92,  cps:0.85},
+    {c:'[LEADS] [SITE] [T4] [FRIO] - Principal',             seg:2327, g:7098.00,  cps:3.05},
+    {c:'[LEADS] [SITE] [T4] [QUENTE] - Principal',           seg:2180, g:18620.83, cps:8.54},
+    {c:'[DIST] Post IG: Quer aprender o processo? Siga...',  seg:1831, g:2765.80,  cps:1.51},
+    {c:'[DIST] Post IG: Curso de Cromagem. Siga...',         seg:1593, g:4481.31,  cps:2.81},
+    {c:'[LEADS] [SITE] [T4] [QUENTE] - Envolvimento 365D',   seg:1491, g:3958.93,  cps:2.66},
+    {c:'[LEADS] [SITE] [T4] [FRIO] [ABO] - Teste criativos', seg:1391, g:6534.74,  cps:4.70},
+    {c:'[LEADS] [SITE] [T3] [QUENTE] - Principal envolv.',   seg:1032, g:3986.35,  cps:3.86},
+    {c:'[LEADS] [SITE] [T4] [QUENTE] - Envolvimento 180D',   seg:947,  g:3989.54,  cps:4.21},
+    {c:'[LEADS] [SITE] [T4] [QUENTE] [ABO] - Teste criativos',seg:610, g:7315.90,  cps:11.99},
+    {c:'[VENDAS] [WPP] [GP] [QUENTE] - Principal',           seg:476,  g:2418.25,  cps:5.08},
+    {c:'[LEADS] [FORMS] [QUENTE] - Teste de formulario',     seg:402,  g:3706.15,  cps:9.22}
+  ],
+  video: [
+    {c:'009 - VID - Um caldeirao magico V2',         s:10966.72, i:1978748, hk:100.07, hd:19.15, ct:0.0289},
+    {c:'008 - VID - Um caldeirao magico',            s:8898.80,  i:1144069, hk:99.03,  hd:18.04, ct:0.0431},
+    {c:'006 - VID - Cromando peca ao vivo',          s:6327.77,  i:4336789, hk:98.62,  hd:53.29, ct:0.0027},
+    {c:'006 - VID - Trabalhando desde os 13 anos',   s:6115.83,  i:2293886, hk:101.15, hd:24.71, ct:0.0108},
+    {c:'006 - VID - Fala chefia',                    s:5337.48,  i:704898,  hk:98.40,  hd:22.14, ct:0.0342},
+    {c:'007 - VID - Fala chefia',                    s:5114.40,  i:831596,  hk:96.92,  hd:29.95, ct:0.0205},
+    {c:'Post IG: Banho de Cromo. Curso 100%...',     s:5012.92,  i:927231,  hk:101.92, hd:25.00, ct:0.0216},
+    {c:'002 - VID - Que padrao por dentro',          s:4582.92,  i:1827245, hk:98.82,  hd:18.55, ct:0.0135},
+    {c:'Post IG: Curso de Cromagem. Siga...',        s:4481.31,  i:1412186, hk:101.09, hd:21.61, ct:0.0147},
+    {c:'005 - VID - Ja conhece o processo de cromo', s:3997.43,  i:562579,  hk:96.76,  hd:17.08, ct:0.0416},
+    {c:'001 - VID - Prova social 1',                 s:3981.69,  i:504553,  hk:100.28, hd:8.07,  ct:0.0978},
+    {c:'006 - VID - Ja conhece o processo de cromo', s:3877.32,  i:690874,  hk:96.78,  hd:25.10, ct:0.0224},
+    {c:'003 - VID - Vamos entrar no banho niqueo',   s:3793.61,  i:433834,  hk:95.48,  hd:20.85, ct:0.0419},
+    {c:'004 - VID - Dia vinte e cinco V2',           s:3770.07,  i:495040,  hk:95.55,  hd:4.48,  ct:0.1700},
+    {c:'009 - VID - Entrou no removedor de tinta',   s:3634.73,  i:493205,  hk:97.28,  hd:18.94, ct:0.0389},
+    {c:'026 - VID - Fala galera',                    s:3026.61,  i:437883,  hk:96.72,  hd:16.02, ct:0.0432},
+    {c:'Post IG: Quer aprender o processo? Siga...', s:2765.80,  i:1129000, hk:98.32,  hd:24.83, ct:0.0099},
+    {c:'007 - VID - Como transformar',               s:2593.94,  i:313386,  hk:96.52,  hd:15.71, ct:0.0527},
+    {c:'001 - VID - Cromamos a maior tampa',         s:2038.77,  i:251519,  hk:95.49,  hd:18.55, ct:0.0437},
+    {c:'004 - VID - Dia vinte e cinco de maio V2',   s:2035.17,  i:365619,  hk:96.58,  hd:4.18,  ct:0.1331}
+  ]
+};
+var _dsFase=null, _dsVideo=null;
+
+function renderDistribuicao(){
+  var n = function(v){ return (v||0).toLocaleString('pt-BR'); };
+  function set(id,v){ var e=document.getElementById(id); if(e) e.textContent=v; }
+
+  var hook = 100*DS.vid.plays/DS.vid.imp;
+  var hold = 100*DS.vid.thru /DS.vid.imp;
+  set('dsSeg',  n(DS.tot.seg));
+  set('dsCps',  fBRL(DS.tot.spend/DS.tot.seg));
+  set('dsHook', hook.toFixed(1)+'%');
+  set('dsHold', hold.toFixed(1)+'%');
+
+  // Funil de video (so criativos com play > 0; imagens ficam de fora)
+  var F=DS.funil;
+  set('dsfImp',   n(F.imp));
+  set('dsfPlays', n(F.plays));
+  set('dsfThru',  n(F.thru));
+  set('dsfCpm',   fBRL(1000*F.spend/F.imp));
+  set('dsfCtp',   fBRL(F.spend/F.thru));
+  set('dsfPctPlay', (100*F.plays/F.imp).toFixed(2).replace('.',',')+'%');
+  set('dsfPctThru', (100*F.thru/F.plays).toFixed(2).replace('.',',')+'%');
+  set('dsfHold',    (100*F.thru/F.imp).toFixed(2).replace('.',',')+'%');
+
+  // Seguidores x custo por seguidor, por fase
+  var cF=document.getElementById('ds-g-fase');
+  if(cF){
+    if(_dsFase) _dsFase.destroy();
+    _dsFase=new Chart(cF,{
+      type:'bar',
+      data:{labels:DS.fase.map(function(f){return f.fase;}),datasets:[
+        {label:'Seguidores',data:DS.fase.map(function(f){return f.seg;}),
+         backgroundColor:'rgba(212,168,0,.7)',borderRadius:3,yAxisID:'y'},
+        {label:'Custo por seguidor (R$)',data:DS.fase.map(function(f){return f.cps;}),
+         type:'line',borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.1)',
+         tension:.3,pointRadius:4,yAxisID:'y2'}
+      ]},
+      options:{plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:10}}}},scales:{
+        x:{grid:{display:false},ticks:{font:{size:10}}},
+        y:{grid:G,beginAtZero:true,ticks:{font:{size:9}}},
+        y2:{position:'right',grid:{display:false},beginAtZero:true,
+            ticks:{font:{size:9},callback:function(v){return 'R$'+v;}}}
+      }}
+    });
+  }
+
+  // Tabela de campanhas por seguidores
+  var tb=document.getElementById('ds-seg-body');
+  if(tb){
+    tb.innerHTML=DS.camp.map(function(x){
+      var cor = x.cps<=2 ? '#16a34a' : (x.cps<=6 ? '#f59e0b' : '#ef4444');
+      return '<tr style="border-bottom:1px solid var(--border)">'
+        +'<td style="padding:9px 8px">'+x.c+'</td>'
+        +'<td style="padding:9px 8px;text-align:right;font-weight:700">'+n(x.seg)+'</td>'
+        +'<td style="padding:9px 8px;text-align:right">'+fBRL(x.g)+'</td>'
+        +'<td style="padding:9px 8px;text-align:right;font-weight:700;color:'+cor+'">'+fBRL(x.cps)+'</td>'
+        +'</tr>';
+    }).join('');
+  }
+
+  // Hook vs Hold nos 12 criativos de maior investimento
+  var cV=document.getElementById('ds-g-video');
+  if(cV){
+    if(_dsVideo) _dsVideo.destroy();
+    var top=DS.video.slice(0,12);
+    _dsVideo=new Chart(cV,{
+      type:'bar',
+      data:{labels:top.map(function(v){return v.c.length>28?v.c.slice(0,28)+'...':v.c;}),datasets:[
+        {label:'Hook rate %',data:top.map(function(v){return v.hk;}),backgroundColor:'rgba(59,130,246,.65)',borderRadius:2},
+        {label:'Hold rate %',data:top.map(function(v){return v.hd;}),backgroundColor:'rgba(22,163,74,.75)',borderRadius:2}
+      ]},
+      options:{indexAxis:'y',plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:10}}}},scales:{
+        x:{grid:G,beginAtZero:true,ticks:{font:{size:9},callback:function(v){return v+'%';}}},
+        y:{grid:{display:false},ticks:{font:{size:9}}}
+      }}
+    });
+  }
+
+  // Tabela de video por criativo
+  var tv=document.getElementById('ds-vid-body');
+  if(tv){
+    tv.innerHTML=DS.video.map(function(v){
+      var corHd = v.hd>=25 ? '#16a34a' : (v.hd>=15 ? '#f59e0b' : '#ef4444');
+      return '<tr style="border-bottom:1px solid var(--border)">'
+        +'<td style="padding:9px 8px">'+v.c+'</td>'
+        +'<td style="padding:9px 8px;text-align:right">'+fBRL(v.s)+'</td>'
+        +'<td style="padding:9px 8px;text-align:right">'+n(v.i)+'</td>'
+        +'<td style="padding:9px 8px;text-align:right">'+v.hk.toFixed(1)+'%</td>'
+        +'<td style="padding:9px 8px;text-align:right;font-weight:700;color:'+corHd+'">'+v.hd.toFixed(1)+'%</td>'
+        +'<td style="padding:9px 8px;text-align:right">'+fBRL(v.ct)+'</td>'
+        +'</tr>';
+    }).join('');
+  }
+}
+// === /DISTRIBUICAO ===
+
+// === INSTAGRAM ==========================================================
+// Le o snapshot diario gravado pelo Stract (trigger "Instagram Mundial Cromo -
+// Perfil Diario 07h", id 1791285579) na tabela ig_perfil_diario_mundial.
+// A leitura e anonima via PostgREST, entao a tabela precisa de uma policy de
+// SELECT para o papel anon; sem isso caimos no seed embutido abaixo.
+var IG_SUPA_URL  = 'https://afmisfmhfloabudcajbh.supabase.co';
+// Chave publishable (nao secreta): so enxerga o que a RLS liberar — aqui,
+// SELECT na serie diaria de seguidores. Escrita segue restrita ao service_role.
+var IG_SUPA_ANON = 'sb_publishable_eNNYTx-b4zWWjM8A7XuI5Q_SqcBW7tL';
+// View em public (o PostgREST so expoe public/graphql_public). Ela le a tabela
+// em "trafego-pago" com security_invoker, respeitando a RLS da base.
+var IG_TABELA    = 'vw_ig_mundial_crescimento';
+
+// Seed: ultimos pontos conhecidos. Serve de fallback e garante que a aba
+// nunca aparece vazia enquanto a key anon nao estiver configurada.
+var IG_SEED = [
+  {data:'2026-10-03', seguidores:542182, qtd_publicacoes:null},
+  {data:'2026-10-06', seguidores:547624, qtd_publicacoes:1544}
+];
+var _igSeg=null, _igGanho=null;
+
+function igCalcGanho(rows){
+  // A view ja devolve ganho_dia; no seed (fallback) calculamos aqui pela
+  // diferenca para o snapshot anterior — mesma regra dos dois lados.
+  return rows.map(function(r,i){
+    var g = (r.ganho_dia !== undefined && r.ganho_dia !== null)
+      ? r.ganho_dia
+      : (i>0 ? r.seguidores-rows[i-1].seguidores : null);
+    return {data:r.data, seg:r.seguidores, ganho:g, posts:r.qtd_publicacoes};
+  });
+}
+
+function renderInstagram(){
+  var url = IG_SUPA_ANON
+    ? IG_SUPA_URL+'/rest/v1/'+IG_TABELA+'?select=data,seguidores,ganho_dia,qtd_publicacoes&order=data.asc'
+    : null;
+  if(!url){ igPinta(IG_SEED); return; }
+  var xhr=new XMLHttpRequest();
+  xhr.open('GET',url,true);
+  xhr.setRequestHeader('apikey',IG_SUPA_ANON);
+  xhr.setRequestHeader('Authorization','Bearer '+IG_SUPA_ANON);
+  xhr.onreadystatechange=function(){
+    if(xhr.readyState!==4) return;
+    var dados=IG_SEED;
+    if(xhr.status>=200 && xhr.status<300){
+      try{ var j=JSON.parse(xhr.responseText); if(j && j.length) dados=j; }catch(e){}
+    }
+    igPinta(dados);
+  };
+  xhr.onerror=function(){ igPinta(IG_SEED); };
+  xhr.send();
+}
+
+function igPinta(rows){
+  var n=function(v){ return (v===null||v===undefined)?'-':v.toLocaleString('pt-BR'); };
+  function set(id,v){ var e=document.getElementById(id); if(e) e.textContent=v; }
+  var d=igCalcGanho(rows);
+  if(!d.length) return;
+  var ult=d[d.length-1], pri=d[0];
+  var ganhoTotal=ult.seg-pri.seg;
+  var dias=Math.max(1,(new Date(ult.data)-new Date(pri.data))/86400000);
+
+  set('igSeg',   n(ult.seg));
+  set('igGanho', (ganhoTotal>=0?'+':'')+n(ganhoTotal));
+  set('igPosts', n(ult.posts));
+  set('igMedia', (ganhoTotal/dias).toFixed(0).replace('.',',')+'/dia');
+  var sub=document.getElementById('igSub');
+  if(sub) sub.textContent='Atualizacao automatica diaria as 07h · '
+    +d.length+' snapshot'+(d.length>1?'s':'')+' · ultimo em '
+    +ult.data.split('-').reverse().join('/');
+
+  var lbl=d.map(function(x){var p=x.data.split('-');return p[2]+'/'+p[1];});
+
+  var c1=document.getElementById('ig-g-seg');
+  if(c1){
+    if(_igSeg) _igSeg.destroy();
+    _igSeg=new Chart(c1,{type:'line',
+      data:{labels:lbl,datasets:[{label:'Seguidores',data:d.map(function(x){return x.seg;}),
+        borderColor:'#d4a800',backgroundColor:'rgba(212,168,0,.12)',fill:true,tension:.3,pointRadius:4}]},
+      options:{plugins:{legend:{display:false}},scales:{
+        x:{grid:{display:false},ticks:{font:{size:9}}},
+        y:{grid:G,beginAtZero:false,ticks:{font:{size:9}}}}}});
+  }
+
+  var c2=document.getElementById('ig-g-ganho');
+  if(c2){
+    if(_igGanho) _igGanho.destroy();
+    var g=d.slice(1);
+    _igGanho=new Chart(c2,{type:'bar',
+      data:{labels:g.map(function(x){var p=x.data.split('-');return p[2]+'/'+p[1];}),
+        datasets:[{label:'Novos seguidores',data:g.map(function(x){return x.ganho;}),
+        backgroundColor:'rgba(22,163,74,.75)',borderRadius:3}]},
+      options:{plugins:{legend:{display:false}},scales:{
+        x:{grid:{display:false},ticks:{font:{size:9}}},
+        y:{grid:G,beginAtZero:true,ticks:{font:{size:9}}}}}});
+  }
+
+  var tb=document.getElementById('ig-body');
+  if(tb){
+    tb.innerHTML=d.slice().reverse().map(function(x){
+      var cor = x.ganho===null ? 'var(--muted)' : (x.ganho>=0?'#16a34a':'#ef4444');
+      var txt = x.ganho===null ? '—' : (x.ganho>=0?'+':'')+x.ganho.toLocaleString('pt-BR');
+      return '<tr style="border-bottom:1px solid var(--border)">'
+        +'<td style="padding:9px 8px">'+x.data.split('-').reverse().join('/')+'</td>'
+        +'<td style="padding:9px 8px;text-align:right;font-weight:700">'+n(x.seg)+'</td>'
+        +'<td style="padding:9px 8px;text-align:right;font-weight:700;color:'+cor+'">'+txt+'</td>'
+        +'<td style="padding:9px 8px;text-align:right">'+n(x.posts)+'</td>'
+        +'</tr>';
+    }).join('');
+  }
+}
+// === /INSTAGRAM ===
 
 // ── CLOUDFLARE WORKER URL ─────────────────────────────────────────────────────
 // Substitua pela URL do seu Worker após o deploy.
@@ -4707,14 +5178,16 @@ function toggleTheme() {
 })();
 
 function switchTab(tab) {
-  var tabs = ['overview','planejamento','pesquisa','insights','vendas','debriefing'];
+  var tabs = ['overview','planejamento','pesquisa','insights','vendas','debriefing','distribuicao','instagram'];
   tabs.forEach(function(t){
     var btn  = document.getElementById('tab-'+t);
     var pane = document.getElementById('pane-'+t);
     if (btn)  btn.classList.toggle('tab-active', t===tab);
     if (pane) pane.style.display = t===tab ? 'block' : 'none';
   });
-  if (tab === 'debriefing') { setTimeout(renderDebriefing, 100); }
+  if (tab === 'debriefing')  { setTimeout(renderDebriefing, 100); }
+  if (tab === 'distribuicao'){ setTimeout(renderDistribuicao, 100); }
+  if (tab === 'instagram')   { setTimeout(renderInstagram, 100); }
 }
 
 // ── FETCH ─────────────────────────────────────────────────────────────────────
