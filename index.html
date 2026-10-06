@@ -891,7 +891,7 @@ input[type=date]{background:transparent;border:none;color:#ccc;font-family:'DM S
       <div>
         <div style="font-size:10px;font-weight:700;letter-spacing:2px;color:var(--yellow);text-transform:uppercase;margin-bottom:5px">Cromador Nivel Pro 2.0</div>
         <div style="font-size:24px;font-weight:800;color:#fff">Debriefing do Lancamento</div>
-        <div style="font-size:12px;color:rgba(255,255,255,.45);margin-top:3px">Captacao 08/04 a 12/05 &middot; Carrinho 11-21/05 &middot; Dados ate 28/05/2026</div>
+        <div style="font-size:12px;color:rgba(255,255,255,.45);margin-top:3px" id="db-lbl-periodo">Captacao 08/04 a 12/05 &middot; Carrinho 11-21/05 &middot; Dados ate 28/05/2026</div>
       </div>
 
     </div>
@@ -1005,7 +1005,7 @@ input[type=date]{background:transparent;border:none;color:#ccc;font-family:'DM S
       </div>
     </div>
 
-    <div class="section-label">Leads x Compradores por Dia &mdash; Captacao (08/04 a 12/05)</div>
+    <div class="section-label" id="db-lbl-leads">Leads x Compradores por Dia &mdash; Captacao (08/04 a 12/05)</div>
     <div class="card" style="padding:18px;margin-bottom:20px"><canvas id="db-g-leads" height="110"></canvas></div>
 
     <div class="section-label">Vendas e Faturamento por Dia</div>
@@ -1314,9 +1314,31 @@ function setDb2OrigemMode(mode){
 // === /DEBRIEFING RENDER DB2/DB3 ===
 
 // === DEBRIEFING ===
-var DB_LDIAS=["08/04", "09/04", "10/04", "11/04", "12/04", "13/04", "14/04", "15/04", "16/04", "17/04", "18/04", "19/04", "20/04", "21/04", "22/04", "23/04", "24/04", "25/04", "26/04", "27/04", "28/04", "29/04", "30/04", "01/05", "02/05", "03/05", "04/05", "05/05", "06/05", "07/05", "08/05", "09/05", "10/05", "11/05", "12/05"];
-var DB_LVALS=[126, 143, 287, 417, 634, 669, 540, 609, 669, 688, 635, 964, 867, 304, 796, 1224, 1246, 489, 737, 1088, 1462, 1486, 1474, 1450, 1316, 1704, 453, 1324, 427, 400, 744, 755, 661, 307, 8];
-var DB_CVALS=[7, 7, 7, 11, 9, 21, 10, 13, 13, 11, 10, 9, 17, 7, 11, 13, 21, 10, 6, 15, 17, 17, 21, 25, 20, 28, 14, 24, 8, 14, 26, 30, 28, 25, 15];
+// Serie "Leads x Compradores por Dia" por lancamento.
+// Compradores sao contados na DATA DE CAPTACAO do lead (nao na data da compra),
+// para que as duas series fiquem no mesmo eixo temporal.
+//
+// 0426 (CNP1): captacao 08/04 a 12/05/2026.
+// 0726 (CNP2): captacao a partir de 08/07/2026; compradores = vendas `paid` dos
+//   produtos Cromador Pro 2.0 / Cromador Pro a partir de 11/08/2026 (abertura do
+//   carrinho), cruzadas por telefone normalizado (55+DDD+numero) com a base de
+//   leads. Dias apos o fim da captacao permanecem na serie: o lead ainda e um
+//   lead do lancamento, independente de quando entrou.
+var DB_SERIES = {
+  '0426': {
+    dias: ["08/04", "09/04", "10/04", "11/04", "12/04", "13/04", "14/04", "15/04", "16/04", "17/04", "18/04", "19/04", "20/04", "21/04", "22/04", "23/04", "24/04", "25/04", "26/04", "27/04", "28/04", "29/04", "30/04", "01/05", "02/05", "03/05", "04/05", "05/05", "06/05", "07/05", "08/05", "09/05", "10/05", "11/05", "12/05"],
+    leads: [126, 143, 287, 417, 634, 669, 540, 609, 669, 688, 635, 964, 867, 304, 796, 1224, 1246, 489, 737, 1088, 1462, 1486, 1474, 1450, 1316, 1704, 453, 1324, 427, 400, 744, 755, 661, 307, 8],
+    comp:  [7, 7, 7, 11, 9, 21, 10, 13, 13, 11, 10, 9, 17, 7, 11, 13, 21, 10, 6, 15, 17, 17, 21, 25, 20, 28, 14, 24, 8, 14, 26, 30, 28, 25, 15],
+    periodo: '08/04 a 12/05'
+  },
+  '0726': {
+    dias: ["08/07", "09/07", "10/07", "11/07", "12/07", "13/07", "14/07", "15/07", "16/07", "17/07", "18/07", "19/07", "20/07", "21/07", "22/07", "23/07", "24/07", "25/07", "26/07", "27/07", "28/07", "29/07", "30/07", "31/07", "01/08", "02/08", "03/08", "04/08", "05/08", "06/08", "07/08", "08/08", "09/08", "10/08", "11/08", "12/08", "13/08", "14/08", "15/08", "16/08", "17/08", "18/08", "19/08", "20/08", "21/08", "22/08", "23/08", "24/08", "25/08", "27/08", "28/08", "31/08", "02/09", "08/09", "13/09", "14/09", "23/09", "27/09"],
+    leads: [1358, 489, 1373, 953, 718, 1619, 1533, 1420, 1408, 891, 1142, 594, 878, 631, 644, 703, 765, 945, 963, 913, 718, 805, 856, 796, 1079, 964, 792, 757, 853, 829, 1039, 1034, 1139, 592, 152, 7, 6, 36, 62, 83, 58, 116, 544, 684, 638, 708, 650, 621, 272, 1, 1, 1, 2, 1, 1, 1, 1, 1],
+    comp:  [5, 3, 3, 5, 1, 3, 2, 1, 3, 6, 7, 4, 2, 2, 4, 3, 1, 6, 3, 4, 3, 2, 6, 5, 4, 5, 3, 7, 6, 5, 3, 9, 4, 7, 3, 0, 0, 0, 1, 1, 1, 1, 3, 7, 5, 3, 2, 5, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    periodo: '08/07 a 27/09'
+  }
+};
+function dbSerie() { return DB_SERIES[LANCAMENTO_ATIVO] || DB_SERIES['0426']; }
 var DB_CRIATIVOS=[{"name": "007 - VID - Fala chefia", "thumb": "https://scontent.xx.fbcdn.net/v/t15.5256-10/663361433_1262742842666426_7715124116633011055_n.jpg?_nc_cat=104&ccb=1-7&_nc_ohc=REs6M-MQOUkQ7kNvwEprXRc&_nc_oc=AdqHVLQh0jTTsw6S5JWATYZRQpN12E5xX-4vw_EREuWXQVSEAlc_FWX63KWKC0HHWQM&_nc_zt=23&_nc_ht=scontent.xx&edm=AOgd6ZUEAAAA&_nc_gid=z9gmKpKcOoYvNsA4MqmuBw&_nc_tpa=Q5bMBQGSR5p-6HdW3IpFQUhCkvvXLYENKwE2IOAtJk6eY81i5yUUFgq911LqzusXZtbsJMEDQSai3zBG&stp=c0.5000x0.5000f_dst-emg0_q75_tt6&ur=a86139&_nc_sid=58080a&oh=00_Af_UCgStoB1Bwh6OY-f6z0JfPBrRnWP_hLPxwVgzYK_HJA&oe=6A21E8F2", "invest": 5177.55, "vendas": 99, "fat": 78903.0, "cac": 52.3, "roas": 15.24}, {"name": "003 - VID - Vamos entrar com a peca no banho niqueo", "thumb": "https://scontent.xx.fbcdn.net/v/t15.5256-10/664282958_1505277307848461_4597266625531074571_n.jpg?_nc_cat=100&ccb=1-7&_nc_ohc=MiJ3Y0p31L8Q7kNvwEp9wAQ&_nc_oc=AdpTbYF0JJSARHxinkEJS3x8IFFIZhzQCwY3Fi1SZCJOBwyiBaHqnlU0eDM0qX91Y6A&_nc_zt=23&_nc_ht=scontent.xx&edm=AOgd6ZUEAAAA&_nc_gid=z9gmKpKcOoYvNsA4MqmuBw&_nc_tpa=Q5bMBQGtrrg6XusotfavIOBGZmu7IzzDqqgv-BpDJcsSSiItM1rX7RO4HNcsuypDS9eywBtyVbVLqhE1&stp=c0.5000x0.5000f_dst-emg0_q75_tt6&ur=a86139&_nc_sid=58080a&oh=00_Af-TQZq_VLaNShWcJPTOZIrbfVbfMtFnaxjN01y9Nhm5iA&oe=6A21F790", "invest": 2850.55, "vendas": 81, "fat": 64557.0, "cac": 35.19, "roas": 22.65}, {"name": "006 - VID - Ja conhece o processo de cromo", "thumb": "https://scontent.xx.fbcdn.net/v/t15.5256-10/666685895_987019667157830_8225322797515108174_n.jpg?_nc_cat=109&ccb=1-7&_nc_ohc=h489gLwxh8MQ7kNvwE9uHhz&_nc_oc=AdpflQo7_Tk7qnIKO2mNtWSUln86LoEGM09YV_p6VHwAoCek2G0rHc75LxZesgfOhEM&_nc_zt=23&_nc_ht=scontent.xx&edm=AOgd6ZUEAAAA&_nc_gid=z9gmKpKcOoYvNsA4MqmuBw&_nc_tpa=Q5bMBQGmh8mh-5E1BNkwDvADgcp570_WQnlsGfcAOJsc7D_CTtTdMtRx1KoeYysMH28uWRaT9D-U4QCh&stp=c0.5000x0.5000f_dst-emg0_q75_tt6&ur=a86139&_nc_sid=58080a&oh=00_Af9WsiC_-Wmpp5o88NFMnvCZp9dwQUKXUHRexr7Ba31KVw&oe=6A21EE06", "invest": 4064.79, "vendas": 70, "fat": 55790.0, "cac": 58.07, "roas": 13.73}, {"name": "002 - VID - Por que poucos profissionais na cromagem", "thumb": "https://scontent.xx.fbcdn.net/v/t15.5256-10/667833413_785445331032256_7675575428183802069_n.jpg?_nc_cat=100&ccb=1-7&_nc_ohc=U4SDYWYjUAgQ7kNvwFpF1K-&_nc_oc=AdpYixg2-RgVJa1MAa3BT4IRFv7G0j-K4oXdyK6fUzvZnIyTWWkciQ4G7wiVQ9Tj4H4&_nc_zt=23&_nc_ht=scontent.xx&edm=AOgd6ZUEAAAA&_nc_gid=z9gmKpKcOoYvNsA4MqmuBw&_nc_tpa=Q5bMBQHsPOd8fWKfkqXzPEbCer2MruwgBY9jX6EBX2vqE_ytpC6DBpVvyniOaVEulPLnacXsp9d-8fAa&stp=c0.5000x0.5000f_dst-emg0_q75_tt6&ur=a86139&_nc_sid=58080a&oh=00_Af-n3dnWKSxbVryLkKWMIetQ7uT4emUmAh7WhA1uR0kwbA&oe=6A21DC84", "invest": 1264.74, "vendas": 28, "fat": 22316.0, "cac": 45.17, "roas": 17.64}, {"name": "001 - VID - Cromamos a maior tampa de motor do mundo", "thumb": "https://scontent.xx.fbcdn.net/v/t15.5256-10/667961545_1995539471047398_7320014931185098069_n.jpg?_nc_cat=104&ccb=1-7&_nc_ohc=MvA1ebSUr7MQ7kNvwEoiASt&_nc_oc=AdoORBClnlgWsmVDXVXfzqO_CQ5d_5jjPe8lXJqsWYHSsCT1Kad2t5Ifm07wNUGnILM&_nc_zt=23&_nc_ht=scontent.xx&edm=AOgd6ZUEAAAA&_nc_gid=z9gmKpKcOoYvNsA4MqmuBw&_nc_tpa=Q5bMBQHQNa5164yZ_Q-HIpN3lJ3Anz59cAc8jcQcpp7mwL2Fo93vYpZHOZCUiOulkB5E15WBGD9uQNtu&stp=c0.5000x0.5000f_dst-emg0_q75_tt6&ur=a86139&_nc_sid=58080a&oh=00_Af8iZ1QEbG4-9hdqY42dvOdD6HxkJmzdBPWZ7VRRnuWcHg&oe=6A21D91D", "invest": 1914.73, "vendas": 4, "fat": 3188.0, "cac": 478.68, "roas": 1.66}, {"name": "026 - VID - Fala galera", "thumb": "https://scontent.xx.fbcdn.net/v/t15.5256-10/673168869_900633473019243_7249375215869632325_n.jpg?_nc_cat=111&ccb=1-7&_nc_ohc=RfASiiTylq0Q7kNvwGZsyKH&_nc_oc=Adq46pNrEaMJDJjwYo50V_Uul0dBqnH2JESmUTep9OegjpoyEBNFSeEp1oW0rQ9jTOs&_nc_zt=23&_nc_ht=scontent.xx&edm=AOgd6ZUEAAAA&_nc_gid=z9gmKpKcOoYvNsA4MqmuBw&_nc_tpa=Q5bMBQE0-yKhFzCSBR_DXzKiQsFelfOGv8c-Y2aJ5cqlAMNHWjYgecjipwHEASbKY_lVyglk2mCB7X9L&stp=c0.5000x0.5000f_dst-emg0_q75_tt6&ur=a86139&_nc_sid=58080a&oh=00_Af-Nca_DDod_CHe5rzwW6Eq4_ccXoCXzz28LDUnH9b-YtA&oe=6A21E7D3", "invest": 3026.61, "vendas": 4, "fat": 3188.0, "cac": 756.65, "roas": 1.05}, {"name": "004 - VID - Olha o que esse cara fez com a peca", "thumb": "https://scontent.xx.fbcdn.net/v/t15.5256-10/669359063_1205542194784992_690859660016688255_n.jpg?_nc_cat=111&ccb=1-7&_nc_ohc=imT9ztMcXdoQ7kNvwEDEBHg&_nc_oc=AdrBGWsMQ8K9obkBPIP7sTft-LiA2jRI-97rYKJ27isc85DRHs-A6KvfFN60_a4l1Vc&_nc_zt=23&_nc_ht=scontent.xx&edm=AOgd6ZUEAAAA&_nc_gid=z9gmKpKcOoYvNsA4MqmuBw&_nc_tpa=Q5bMBQFnMGPcMs5QzcQjbA-Uj91H8BMGQMLOllTrV_lW5rMFV-6zZsbR5TBp-91XK37D2gtl-b5hOzE-&stp=c0.5000x0.5000f_dst-emg0_q75_tt6&ur=a86139&_nc_sid=58080a&oh=00_Af_v6JTnwhgF82F5HSRjpGEHTTKdUB7ZT1wI0-OR3f-WFQ&oe=6A21D8FF", "invest": 315.43, "vendas": 1, "fat": 797.0, "cac": 315.43, "roas": 2.53}, {"name": "009 - VID - Entrou no removedor de tinta", "thumb": "https://scontent.xx.fbcdn.net/v/t15.5256-10/668677897_1711617493552023_2878519439763888118_n.jpg?_nc_cat=110&ccb=1-7&_nc_ohc=9rj6voIid6cQ7kNvwHREH6_&_nc_oc=Ado9YJvyD-TxD5E3tshjnBFs28nIuCIBYWBVx5kX_Wa1_2Pwlrd3KJ60cLPmPdPErcs&_nc_zt=23&_nc_ht=scontent.xx&edm=AOgd6ZUEAAAA&_nc_gid=z9gmKpKcOoYvNsA4MqmuBw&_nc_tpa=Q5bMBQFlQ5kgm2RbZGPMKSeZaO4aPt1HGumTLcFE3tlKQbIqtxz2m5RbIyNUmgDxWKof4vKtI0n0Wpxj&stp=c0.5000x0.5000f_dst-emg0_q75_tt6&ur=a86139&_nc_sid=58080a&oh=00_Af96yC_KIUPuz8qbhlpuG9KzC9Q4M4tNpLxJQRDN9y135Q&oe=6A21F0F6", "invest": 3834.05, "vendas": 0, "fat": 0.0, "cac": 0.0, "roas": 0.0}, {"name": "004 - VID - Dia vinte e cinco V2", "thumb": "https://scontent.xx.fbcdn.net/v/t15.5256-10/702450389_2158035688328790_7450952346883134552_n.jpg?_nc_cat=102&ccb=1-7&_nc_ohc=G1Req5T-HoQQ7kNvwHnSYPp&_nc_oc=Adr2Kw392baeg0FICvFQp_1JJL4ux5nceKLh5YvSZJauEevClw-rCLqayXjLED1ByAw&_nc_zt=23&_nc_ht=scontent.xx&edm=AOgd6ZUEAAAA&_nc_gid=z9gmKpKcOoYvNsA4MqmuBw&_nc_tpa=Q5bMBQHRK6XV_SNVRyRiX8fbMHN2nJV6FWWFmVKmLM_Cg5JHyAGY1hn1Nnb_iEOH7O5CMfdKE_q5SZuy&stp=c0.5000x0.5000f_dst-emg0_q75_tt6&ur=a86139&_nc_sid=58080a&oh=00_Af-0h4kfPfUaBuPsqvUO5pdvCyrkzljXgpFqLzTNxmR4Ug&oe=6A21E41C", "invest": 3770.07, "vendas": 0, "fat": 0.0, "cac": 0.0, "roas": 0.0}, {"name": "Post do Instagram: Quer aprender o processo? Siga...", "thumb": "https://scontent.xx.fbcdn.net/v/t15.5256-10/652202986_2363529314071554_6981488136829206344_n.jpg?_nc_cat=105&ccb=1-7&_nc_ohc=BwLPWvMuW-MQ7kNvwH3075W&_nc_oc=AdqbPRfDA42qQF7oYrHA11R5oVoNhNXNwN1x2-iBG4dnbDip8yu9KRcNEZZoMoXqW_E&_nc_zt=23&_nc_ht=scontent.xx&edm=AOgd6ZUEAAAA&_nc_gid=z9gmKpKcOoYvNsA4MqmuBw&_nc_tpa=Q5bMBQEPW_Bz273b22DlIYw3rJQ0gGDP0kFS8aZwgbj8ZcnJPthlGBBih_tiNuoVZTWpuWT8wn00vkaV&stp=c0.5000x0.5000f_dst-emg0_q75_tt6&ur=a7ce7f&_nc_sid=58080a&oh=00_Af_xwkiXqqLJUmxyK4GItL2Tw6__bBU1ArdC33MvCe2WgA&oe=6A22028D", "invest": 2461.59, "vendas": 0, "fat": 0.0, "cac": 0.0, "roas": 0.0}, {"name": "Post do Instagram: Banho de Cromo. Curso 100%...", "thumb": "https://scontent.xx.fbcdn.net/v/t15.5256-10/649198583_897729529775138_9164833369636075360_n.jpg?_nc_cat=111&ccb=1-7&_nc_ohc=2Bgesncau90Q7kNvwGQRwYp&_nc_oc=AdoLAcU7o_VyL5-wGyKY0X9M2-WqMqI8kMnVAD3_2gu5hgdKqHiMfL6vdlAhskoVnXY&_nc_zt=23&_nc_ht=scontent.xx&edm=AOgd6ZUEAAAA&_nc_gid=z9gmKpKcOoYvNsA4MqmuBw&_nc_tpa=Q5bMBQHW0rLtlXIMx_dVB60RZWxGRoavwqYg-SavHp4Ds7Tl9BmwteNhk_KXUCRa09ed_nYEvc0cSCU6&stp=c0.5000x0.5000f_dst-emg0_q75_tt6&ur=a7ce7f&_nc_sid=58080a&oh=00_Af-cxJebM36iOkJqea3cnonrAHvKR4SyvjXsITcLd4CVrQ&oe=6A220346", "invest": 2459.54, "vendas": 0, "fat": 0.0, "cac": 0.0, "roas": 0.0}, {"name": "004 - VID - Dia vinte e cinco de maio V2", "thumb": "https://scontent.xx.fbcdn.net/v/t15.5256-10/702450389_2158035688328790_7450952346883134552_n.jpg?_nc_cat=102&ccb=1-7&_nc_ohc=G1Req5T-HoQQ7kNvwHnSYPp&_nc_oc=Adr2Kw392baeg0FICvFQp_1JJL4ux5nceKLh5YvSZJauEevClw-rCLqayXjLED1ByAw&_nc_zt=23&_nc_ht=scontent.xx&edm=AOgd6ZUEAAAA&_nc_gid=z9gmKpKcOoYvNsA4MqmuBw&_nc_tpa=Q5bMBQEjj1X-XKlhblxRn9K-LdD4DEnIen8lhR0bBmKHXWLUI-4i_9ssR3M4kAbAWGXHdEUh3kSqJl5i&stp=c0.5000x0.5000f_dst-emg0_q75_tt6&ur=a86139&_nc_sid=58080a&oh=00_Af9D_UGVXoK7_ZV4O50ptHoiyfKR1jZZkEwsV68HIDSBNQ&oe=6A21E41C", "invest": 2038.05, "vendas": 0, "fat": 0.0, "cac": 0.0, "roas": 0.0}, {"name": "002 - VID - Que padrao por dentro igual peca nova", "thumb": "https://scontent.xx.fbcdn.net/v/t15.5256-10/664480609_1503393054460549_5101905110253679747_n.jpg?_nc_cat=107&ccb=1-7&_nc_ohc=uTvhH7veu_AQ7kNvwHQRqy1&_nc_oc=AdoPSxTRSxJBiMf8CH9zPz_fSSOfoAdtxprsQNraL4kH6P1TwwzHoPD0TBEiaIepL5I&_nc_zt=23&_nc_ht=scontent.xx&edm=AOgd6ZUEAAAA&_nc_gid=z9gmKpKcOoYvNsA4MqmuBw&_nc_tpa=Q5bMBQGOLt3Ci_Zfe3TA3Ob-5XjenZpMMJcGu9vpMUNsR63GwyxRVlXb7DorhaGTn-2IhDJMV4fsfaW1&stp=c0.5000x0.5000f_dst-emg0_q75_tt6&ur=a7ce7f&_nc_sid=58080a&oh=00_Af8fm4xtIBaKE-8GyPJKaKyKwxEIuC7ie1009SVt27xLXg&oe=6A220312", "invest": 1942.48, "vendas": 0, "fat": 0.0, "cac": 0.0, "roas": 0.0}, {"name": "001 - VID - Cromagem mais musica ao fundo", "thumb": "https://scontent.xx.fbcdn.net/v/t15.5256-10/651943785_1365590108917485_8029153199143357956_n.jpg?_nc_cat=105&ccb=1-7&_nc_ohc=mbVMYOVZ3KIQ7kNvwF8yCq-&_nc_oc=Adrx8lAWbbP9rNk7t1KRWy11qoIyqHBuX1DHSIq1GzwyTK-GJFNk9NJzXrTrKznPjGw&_nc_zt=23&_nc_ht=scontent.xx&edm=AOgd6ZUEAAAA&_nc_gid=z9gmKpKcOoYvNsA4MqmuBw&_nc_tpa=Q5bMBQH934MWOSHMJepJCM7R0RDsirsbCtorpge-rJsLKxV3dHP9R9oWqm2rUUtEPnCOhmcJZr-J4Rtf&stp=c0.5000x0.5000f_dst-emg0_q75_tt6&ur=a7ce7f&_nc_sid=58080a&oh=00_Af913qjYNfavH2h5hsFNRiUrvAYh9oH321ok5jSgSvMLfg&oe=6A220B6D", "invest": 1918.19, "vendas": 0, "fat": 0.0, "cac": 0.0, "roas": 0.0}, {"name": "024 - VID - Curso de cromagem", "thumb": "https://scontent.xx.fbcdn.net/v/t15.5256-10/672929488_1449370623338034_2850027046032875113_n.jpg?_nc_cat=108&ccb=1-7&_nc_ohc=Ov0Jy2I6tNAQ7kNvwF0KVzv&_nc_oc=AdrEoTHB7S5Q8l5IvWwmTwj9QKcg9e7TeVSbVpUk1QCjRERwIsCOj0jEw_VJEaOTr1A&_nc_zt=23&_nc_ht=scontent.xx&edm=AOgd6ZUEAAAA&_nc_gid=z9gmKpKcOoYvNsA4MqmuBw&_nc_tpa=Q5bMBQHUxUKI-RCxb_w5__Jr6SiliwF86QRgbl4fBSocART3Z36izil7paPczZVTFcAVL4voMfRrHcb3&stp=c0.5000x0.5000f_dst-emg0_q75_tt6&ur=a86139&_nc_sid=58080a&oh=00_Af91alMMTFEU4qq2AqiDwt8Ial1epALbfxstE1C29PbUDg&oe=6A220453", "invest": 1910.49, "vendas": 0, "fat": 0.0, "cac": 0.0, "roas": 0.0}];
 var DB_INV_META=63657.96, DB_IMPOSTO=7829.65, DB_LEAGUE=10392.41;
 var DB_LEADS_TOTAL=28381, DB_LEADS_LP=15685, DB_COMPRADORES=532;
@@ -1324,6 +1346,13 @@ var _dbPie=null, _dbBar=null;
 
 function renderDebriefing(){
   var k=window._dbKiwify;
+  // Subtitulo do debriefing conforme o lancamento ativo
+  var perEl=document.getElementById('db-lbl-periodo');
+  if(perEl){
+    perEl.innerHTML = (LANCAMENTO_ATIVO==='0426')
+      ? 'Captacao 08/04 a 12/05 &middot; Carrinho 11-21/05 &middot; Dados ate 28/05/2026'
+      : 'Captacao a partir de 08/07 &middot; Carrinho a partir de 11/08 &middot; Dados ate hoje';
+  }
   var COLS=['#d4a800','#16a34a','#3b82f6','#8b5cf6','#ef4444','#f97316','#14b8a6','#ec4899'];
   var vCrom=k?k.vendas:461;
   var fCrom=k?k.fat:vCrom*797;
@@ -1423,13 +1452,17 @@ function dbGLeads(){
   var ctx=document.getElementById('db-g-leads');
   if(!ctx) return;
   if(ctx._ch) ctx._ch.destroy();
-  var maxLeads=Math.max.apply(null,DB_LVALS);
-  var maxComp=Math.max.apply(null,DB_CVALS);
+  var S=dbSerie();
+  var maxLeads=Math.max.apply(null,S.leads);
+  var maxComp=Math.max.apply(null,S.comp);
+  // Atualiza o rotulo da secao com o periodo de captacao do lancamento ativo
+  var lblEl=document.getElementById('db-lbl-leads');
+  if(lblEl) lblEl.innerHTML='Leads x Compradores por Dia &mdash; Captacao ('+S.periodo+')';
   ctx._ch=new Chart(ctx,{
     type:'bar',
-    data:{labels:DB_LDIAS,datasets:[
-      {label:'Leads/dia',data:DB_LVALS,backgroundColor:'rgba(212,168,0,.65)',yAxisID:'y',borderRadius:2},
-      {label:'Compradores/dia',data:DB_CVALS,type:'line',borderColor:'#16a34a',backgroundColor:'rgba(22,163,74,.1)',fill:true,tension:.4,pointRadius:3,yAxisID:'y2'}
+    data:{labels:S.dias,datasets:[
+      {label:'Leads/dia',data:S.leads,backgroundColor:'rgba(212,168,0,.65)',yAxisID:'y',borderRadius:2},
+      {label:'Compradores/dia',data:S.comp,type:'line',borderColor:'#16a34a',backgroundColor:'rgba(22,163,74,.1)',fill:true,tension:.4,pointRadius:3,yAxisID:'y2'}
     ]},
     options:{plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:10}}}},scales:{
       x:{grid:{display:false},ticks:{font:{size:9},maxRotation:45}},
@@ -1475,15 +1508,18 @@ function dbGGasto(){
   if(ctx._ch) ctx._ch.destroy();
   // Acumular Meta por data ISO (ordenar cronologicamente)
   var metaMap={}, googleMap={};
+  // Corte final do debriefing por lancamento. O CNP1 fecha em 28/05/2026;
+  // os demais acompanham ate hoje.
+  var DB_FIM = (LANCAMENTO_ATIVO==='0426') ? '2026-05-28' : new Date().toISOString().slice(0,10);
   cachedMeta.forEach(function(r){
     var d=(r['Date']||'').slice(0,10);
-    if(!d||d>'2026-05-28') return;
+    if(!d||d>DB_FIM) return;
     var s=parseFloat((r['Spend (Cost, Amount Spent)']||'0').replace(/\./g,'').replace(',','.'));
     metaMap[d]=(metaMap[d]||0)+s;
   });
   cachedGoogle.forEach(function(r){
     var d=(r['Date (Segment)']||r['Date']||'').slice(0,10);
-    if(!d||d>'2026-05-28') return;
+    if(!d||d>DB_FIM) return;
     var s=parseFloat((r['Cost']||r['Spend']||'0').replace(/\./g,'').replace(',','.'));
     googleMap[d]=(googleMap[d]||0)+s;
   });
@@ -4642,6 +4678,9 @@ function trocarLancamento() {
   var el = document.getElementById('campaignTitle');
   if (el) el.textContent = cfgLanc().titulo;
   fetchAll(true);
+  // Se o debriefing estiver aberto, redesenha com a serie do novo lancamento
+  var pane = document.getElementById('pane-debriefing');
+  if (pane && pane.style.display !== 'none') setTimeout(renderDebriefing, 120);
 }
 
 function toggleTheme() {
