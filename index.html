@@ -1199,8 +1199,8 @@ input[type=date]{background:transparent;border:none;color:#ccc;font-family:'DM S
         O comprador e atribuido ao <strong>adset de captacao do lead</strong> (<code>utm_medium</code> da aba
         Elementor), nao ao canal do checkout. O <code>utm_medium</code> da venda diz apenas como ela
         fechou (chat, api-oficial) &mdash; por isso o de-para e sempre lead &rarr; venda, cruzado por
-        telefone normalizado. Vendas consideradas: pagas, Cromador Pro 2.0 / Cromador Pro,
-        a partir de 11/08/2026.
+        telefone normalizado (55+DDD+numero, tolerante ao 9&ordm; digito). Vendas consideradas:
+        pagas, Cromador Pro 2.0 / Cromador Pro, periodo completo da planilha.
       </div>
     </div>
 
@@ -1976,32 +1976,34 @@ var DS = {
     {c:'004 - VID - Dia vinte e cinco de maio V2',   s:2035.17,  i:365619,  hk:96.58,  hd:4.18,  ct:0.1331}
   ]
 };
-// Publicos compradores do CNP2: lead (aba Elementor, utm_medium = adset de
-// captacao) cruzado por telefone com as vendas pagas de Cromador Pro 2.0/Pro
-// a partir de 11/08/2026. O comprador conta no adset que captou o lead, nao
-// no canal onde a venda fechou.
+// Publicos compradores: lead (aba Elementor, utm_medium = adset de captacao)
+// cruzado por telefone com as vendas pagas de Cromador Pro 2.0/Pro da aba
+// Pagina1 — periodo completo da planilha, sem recorte de data.
+// O comprador conta no adset que captou o lead, nao no canal onde a venda
+// fechou. Telefone normalizado para 55+DDD+numero dos dois lados, com
+// casamento tolerante ao 9o digito (bases gravam nos dois formatos).
 var DP = {
-  pubTot: {leads:36923, comp:344, casados:189},
+  pubTot: {leads:36923, comp:750, casados:419},
   pub: [
-    {k:'ORGANICO/DIRETO', l:12223, c:99, cv:0.81},
-    {k:'QUENTE',          l:6301,  c:47, cv:0.75},
-    {k:'FRIO',            l:18388, c:43, cv:0.23}
+    {k:'ORGANICO/DIRETO', l:12223, c:227, cv:1.86},
+    {k:'FRIO',            l:18388, c:112, cv:0.61},
+    {k:'QUENTE',          l:6301,  c:80,  cv:1.27}
   ],
   adsets: [
-    {k:'organico', l:7304, c:62, cv:0.85},
-    {k:'(sem adset)', l:5449, c:29, cv:0.53},
-    {k:'YouTube', l:2640, c:16, cv:0.61},
-    {k:'bio', l:349, c:14, cv:4.01},
-    {k:'01 - [FEED/STORIES] - IG/FB Envolvimento 030D — Cópia', l:1264, c:13, cv:1.03},
-    {k:'00 - [FEED/STORIES] - [ADV+] Lista compradores cromador', l:4709, c:8, cv:0.17},
-    {k:'00 - [FEED/STORIES] - InitiateCheckout + Pag vendas/captura acoes passadas — Cópia', l:707, c:5, cv:0.71},
-    {k:'03 - [FEED/STORIES] - VV 75% ads captura - 180D', l:595, c:3, cv:0.50},
-    {k:'00 - [FEED/STORIES] - [ADV+] Lista compradores cromador - 02', l:1009, c:3, cv:0.30},
-    {k:'00 - [FEED/STORIES] - [IG/FB] Envolvimento 365D - 29', l:188, c:3, cv:1.60},
-    {k:'00 - [FEED/STORIES] - [IG/FB] Envolvimento 365D - 31', l:160, c:3, cv:1.88},
-    {k:'00 - [FEED/STORIES] - [IG/FB] Envolvimento 365D - 25', l:141, c:3, cv:2.13},
-    {k:'00 - [FEED/STORIES] - InitiateCheckout + Pag vendas/captura acoes passadas', l:505, c:2, cv:0.40},
-    {k:'00 - [FEED/STORIES] - Lista geral de leads + Compradores GP e PE', l:392, c:2, cv:0.51}
+    {k:'organico', l:7304, c:156, cv:2.14},
+    {k:'(sem adset)', l:5449, c:63, cv:1.16},
+    {k:'YouTube', l:2640, c:35, cv:1.33},
+    {k:'00 - [ADV+] Lista compradores cromador', l:4709, c:23, cv:0.49},
+    {k:'01 - IG/FB Envolvimento 030D — Cópia', l:1264, c:21, cv:1.66},
+    {k:'bio', l:349, c:20, cv:5.73},
+    {k:'00 - InitiateCheckout + Pag vendas/captura — Cópia', l:707, c:18, cv:2.55},
+    {k:'03 - IG/FB Seguidores', l:1070, c:8, cv:0.75},
+    {k:'03 - IG/FB Envolvimento 180D', l:1259, c:7, cv:0.56},
+    {k:'03 - IG/FB Envolvimento 365D', l:1376, c:7, cv:0.51},
+    {k:'03 - VV 75% ads captura - 180D', l:595, c:5, cv:0.84},
+    {k:'00 - [ADV+] Lista compradores cromador - 03', l:951, c:5, cv:0.53},
+    {k:'00 - [ADV+] Lista compradores cromador - 02', l:1009, c:5, cv:0.50},
+    {k:'00 - Lista geral de leads + Compradores GP e PE', l:392, c:5, cv:1.28}
   ]
 };
 var _dsFase=null, _dsVideo=null, _dpPub=null;
