@@ -1192,6 +1192,42 @@ input[type=date]{background:transparent;border:none;color:#ccc;font-family:'DM S
       </table>
     </div>
 
+    <div class="section-label">Publicos Compradores &mdash; CNP2 2026</div>
+    <div class="card" style="padding:14px 18px;margin-bottom:16px;border-left:3px solid var(--yellow)">
+      <div style="font-size:11px;line-height:1.7;color:var(--muted)">
+        <strong style="color:var(--text)">Como foi apurado.</strong>
+        O comprador e atribuido ao <strong>adset de captacao do lead</strong> (<code>utm_medium</code> da aba
+        Elementor), nao ao canal do checkout. O <code>utm_medium</code> da venda diz apenas como ela
+        fechou (chat, api-oficial) &mdash; por isso o de-para e sempre lead &rarr; venda, cruzado por
+        telefone normalizado. Vendas consideradas: pagas, Cromador Pro 2.0 / Cromador Pro,
+        a partir de 11/08/2026.
+      </div>
+    </div>
+
+    <div class="grid-bn" style="margin-bottom:18px">
+      <div class="card bn"><div class="bn-val" id="dpComp">-</div><div class="bn-lbl">Compradores atribuidos</div></div>
+      <div class="card bn"><div class="bn-val" id="dpTaxa">-</div><div class="bn-lbl">% dos compradores com lead</div></div>
+      <div class="card bn"><div class="bn-val" id="dpConv">-</div><div class="bn-lbl">Conversao lead &rarr; comprador</div></div>
+      <div class="card bn"><div class="bn-val" id="dpOrfaos">-</div><div class="bn-lbl">Sem lead de origem</div></div>
+    </div>
+
+    <div class="card" style="padding:18px;margin-bottom:20px"><canvas id="dp-g-pub" height="100"></canvas></div>
+
+    <div class="section-label">Adsets de Captacao que Mais Geraram Compradores</div>
+    <div class="card" style="padding:18px;margin-bottom:24px;overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr style="border-bottom:2px solid var(--border)">
+            <th style="padding:10px 8px;color:var(--muted);font-weight:600;text-align:left">ADSET DE CAPTACAO</th>
+            <th style="padding:10px 8px;color:var(--muted);font-weight:600;text-align:right">LEADS</th>
+            <th style="padding:10px 8px;color:var(--muted);font-weight:600;text-align:right">COMPRADORES</th>
+            <th style="padding:10px 8px;color:var(--muted);font-weight:600;text-align:right">CONVERSAO</th>
+          </tr>
+        </thead>
+        <tbody id="dp-ad-body"></tbody>
+      </table>
+    </div>
+
     <div class="section-label">Hook vs Hold por Criativo &mdash; Video</div>
     <div class="card" style="padding:18px;margin-bottom:20px"><canvas id="ds-g-video" height="120"></canvas></div>
 
@@ -1940,7 +1976,35 @@ var DS = {
     {c:'004 - VID - Dia vinte e cinco de maio V2',   s:2035.17,  i:365619,  hk:96.58,  hd:4.18,  ct:0.1331}
   ]
 };
-var _dsFase=null, _dsVideo=null;
+// Publicos compradores do CNP2: lead (aba Elementor, utm_medium = adset de
+// captacao) cruzado por telefone com as vendas pagas de Cromador Pro 2.0/Pro
+// a partir de 11/08/2026. O comprador conta no adset que captou o lead, nao
+// no canal onde a venda fechou.
+var DP = {
+  pubTot: {leads:36923, comp:344, casados:189},
+  pub: [
+    {k:'ORGANICO/DIRETO', l:12223, c:99, cv:0.81},
+    {k:'QUENTE',          l:6301,  c:47, cv:0.75},
+    {k:'FRIO',            l:18388, c:43, cv:0.23}
+  ],
+  adsets: [
+    {k:'organico', l:7304, c:62, cv:0.85},
+    {k:'(sem adset)', l:5449, c:29, cv:0.53},
+    {k:'YouTube', l:2640, c:16, cv:0.61},
+    {k:'bio', l:349, c:14, cv:4.01},
+    {k:'01 - [FEED/STORIES] - IG/FB Envolvimento 030D — Cópia', l:1264, c:13, cv:1.03},
+    {k:'00 - [FEED/STORIES] - [ADV+] Lista compradores cromador', l:4709, c:8, cv:0.17},
+    {k:'00 - [FEED/STORIES] - InitiateCheckout + Pag vendas/captura acoes passadas — Cópia', l:707, c:5, cv:0.71},
+    {k:'03 - [FEED/STORIES] - VV 75% ads captura - 180D', l:595, c:3, cv:0.50},
+    {k:'00 - [FEED/STORIES] - [ADV+] Lista compradores cromador - 02', l:1009, c:3, cv:0.30},
+    {k:'00 - [FEED/STORIES] - [IG/FB] Envolvimento 365D - 29', l:188, c:3, cv:1.60},
+    {k:'00 - [FEED/STORIES] - [IG/FB] Envolvimento 365D - 31', l:160, c:3, cv:1.88},
+    {k:'00 - [FEED/STORIES] - [IG/FB] Envolvimento 365D - 25', l:141, c:3, cv:2.13},
+    {k:'00 - [FEED/STORIES] - InitiateCheckout + Pag vendas/captura acoes passadas', l:505, c:2, cv:0.40},
+    {k:'00 - [FEED/STORIES] - Lista geral de leads + Compradores GP e PE', l:392, c:2, cv:0.51}
+  ]
+};
+var _dsFase=null, _dsVideo=null, _dpPub=null;
 
 function renderDistribuicao(){
   var n = function(v){ return (v||0).toLocaleString('pt-BR'); };
@@ -1996,6 +2060,52 @@ function renderDistribuicao(){
         +'<td style="padding:9px 8px;text-align:right;font-weight:700">'+n(x.seg)+'</td>'
         +'<td style="padding:9px 8px;text-align:right">'+fBRL(x.g)+'</td>'
         +'<td style="padding:9px 8px;text-align:right;font-weight:700;color:'+cor+'">'+fBRL(x.cps)+'</td>'
+        +'</tr>';
+    }).join('');
+  }
+
+  // --- Publicos compradores -------------------------------------------
+  var T=DP.pubTot;
+  set('dpComp',   n(T.casados));
+  set('dpTaxa',   (100*T.casados/T.comp).toFixed(1).replace('.',',')+'%');
+  set('dpConv',   (100*T.casados/T.leads).toFixed(2).replace('.',',')+'%');
+  set('dpOrfaos', n(T.comp-T.casados));
+
+  var cP=document.getElementById('dp-g-pub');
+  if(cP){
+    if(_dpPub) _dpPub.destroy();
+    var COR={'FRIO':'#3b82f6','QUENTE':'#ef4444','ORGANICO/DIRETO':'#16a34a'};
+    _dpPub=new Chart(cP,{
+      type:'bar',
+      data:{labels:DP.pub.map(function(p){return p.k;}),datasets:[
+        {label:'Compradores',data:DP.pub.map(function(p){return p.c;}),
+         backgroundColor:DP.pub.map(function(p){return COR[p.k]||'#9ca3af';}),
+         borderRadius:3,yAxisID:'y'},
+        {label:'Conversao %',data:DP.pub.map(function(p){return p.cv;}),
+         type:'line',borderColor:'#d4a800',backgroundColor:'rgba(212,168,0,.1)',
+         tension:.3,pointRadius:4,yAxisID:'y2'}
+      ]},
+      options:{plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:10}}}},scales:{
+        x:{grid:{display:false},ticks:{font:{size:10}}},
+        y:{grid:G,beginAtZero:true,ticks:{font:{size:9}}},
+        y2:{position:'right',grid:{display:false},beginAtZero:true,
+            ticks:{font:{size:9},callback:function(v){return v+'%';}}}
+      }}
+    });
+  }
+
+  var tp=document.getElementById('dp-ad-body');
+  if(tp){
+    tp.innerHTML=DP.adsets.map(function(a){
+      // verde quando converte acima da media geral do lancamento
+      var media=100*T.casados/T.leads;
+      var cor = a.cv>=media*2 ? '#16a34a' : (a.cv>=media ? '#f59e0b' : '#ef4444');
+      return '<tr style="border-bottom:1px solid var(--border)">'
+        +'<td style="padding:9px 8px">'+a.k+'</td>'
+        +'<td style="padding:9px 8px;text-align:right">'+n(a.l)+'</td>'
+        +'<td style="padding:9px 8px;text-align:right;font-weight:700">'+a.c+'</td>'
+        +'<td style="padding:9px 8px;text-align:right;font-weight:700;color:'+cor+'">'
+          +a.cv.toFixed(2).replace('.',',')+'%</td>'
         +'</tr>';
     }).join('');
   }
