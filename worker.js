@@ -12,6 +12,10 @@
  * Para abrir um lançamento novo basta criar o secret SHEET_ID_<MMAA>:
  * este arquivo não precisa mais ser alterado.
  *
+ * ATENÇÃO: não cole aqui a versão antiga com o ternário `lancamento === '0726'`.
+ * Ela faz todo lançamento fora do 0726 cair no 0426 silenciosamente — foi o bug
+ * corrigido em 10/10/2026, quando ?lancamento=1026 servia a planilha do 0426.
+ *
  * USO:
  *   ?sheet=Dados Meta Ads&lancamento=0426
  *   ?sheet=Dados Meta Ads&lancamento=0726
