@@ -5,6 +5,7 @@
  * SECRETS (Settings > Variables and Secrets):
  *   SHEET_ID_0426  → ID da planilha CNP0426 (lançamento anterior)
  *   SHEET_ID_0726  → 1Zq9mh_3ZSDlM9NeXPLGQ_ArkjpLLt0PiSwlS07LFQng
+ *   SHEET_ID_1026  → 1mTqd9d5usgx5VERtfT6tk-_P4D-na2bTDqhcy_64MkM
  *   GOOGLE_SA_KEY  → JSON completo da Service Account GCP
  *
  * USO:
