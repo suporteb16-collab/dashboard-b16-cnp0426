@@ -4,3 +4,9 @@ dados_kiwify.csv
 dados_*.csv
 *_kiwify.csv
 *.xlsx
+
+# Pastas de trabalho por lançamento: exports crus de Meta/Kiwify/leads.
+# Os CSV de "Leads Compradores" trazem telefone — nunca versionar.
+cnp*-20*/
+*Leads*.csv
+*Compradores*.csv
