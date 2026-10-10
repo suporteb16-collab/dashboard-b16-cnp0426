@@ -3,13 +3,19 @@
  * Dashboard CNP — Cromador Nível Pro
  *
  * SECRETS (Settings > Variables and Secrets):
- *   SHEET_ID_0426  → ID da planilha CNP0426 (lançamento anterior)
- *   SHEET_ID_0726  → 1Zq9mh_3ZSDlM9NeXPLGQ_ArkjpLLt0PiSwlS07LFQng
- *   GOOGLE_SA_KEY  → JSON completo da Service Account GCP
+ *   SHEET_ID_<MMAA>  → um secret por lançamento, resolvido por convenção de nome.
+ *   SHEET_ID_0426    → ID da planilha CNP1 2026 (abr/2026)
+ *   SHEET_ID_0726    → 1Zq9mh_3ZSDlM9NeXPLGQ_ArkjpLLt0PiSwlS07LFQng (jul/2026)
+ *   SHEET_ID_1026    → 1mTqd9d5usgx5VERtfT6tk-_P4D-na2bTDqhcy_64MkM (out/2026)
+ *   GOOGLE_SA_KEY    → JSON completo da Service Account GCP
+ *
+ * Para abrir um lançamento novo basta criar o secret SHEET_ID_<MMAA>:
+ * este arquivo não precisa mais ser alterado.
  *
  * USO:
  *   ?sheet=Dados Meta Ads&lancamento=0426
  *   ?sheet=Dados Meta Ads&lancamento=0726
+ *   ?sheet=Dados Meta Ads&lancamento=1026
  */
 
 const ALLOWED_SHEETS = [
@@ -120,10 +126,20 @@ export default {
       );
     }
 
-    // Seleciona SHEET_ID conforme lançamento
-    const sheetId = lancamento === '0726'
-      ? env.SHEET_ID_0726
-      : (env.SHEET_ID_0426 || env.SHEET_ID);
+    // Valida o formato MMAA antes de indexar o env — sem isso, um `lancamento`
+    // arbitrário na querystring viraria nome de variável de ambiente.
+    if (!/^\d{4}$/.test(lancamento)) {
+      return new Response(
+        JSON.stringify({ error: 'Lançamento inválido: ' + lancamento }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Seleciona SHEET_ID por convenção de nome: SHEET_ID_<MMAA>.
+    // Lançamento novo = criar o secret, sem mexer neste arquivo.
+    // O fallback para SHEET_ID (sem sufixo) cobre o 0426 legado.
+    const sheetId = env[`SHEET_ID_${lancamento}`]
+      || (lancamento === '0426' ? env.SHEET_ID : undefined);
 
     if (!sheetId) {
       return new Response(
