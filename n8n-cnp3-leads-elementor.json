@@ -1,0 +1,257 @@
+{
+  "name": "CNP3 - Leads Clint -> Planilha Elementor (1026)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "a1000000-0000-4000-8000-000000000001",
+      "name": "De hora em hora",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [-320, 0]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  \"Nome*\",\n  \"Telefone*\",\n  utm_source,\n  utm_medium,\n  utm_campaign,\n  utm_content,\n  utm_term,\n  utm_id,\n  email,\n  \"Form Name (ID)\",\n  \"Submission ID\",\n  \"Created At\",\n  \"User ID\",\n  \"User Agent\",\n  \"User IP\",\n  \"Referrer\"\nFROM public.dash_cnp3_leads_elementor\nORDER BY _created_at_utc;",
+        "options": {}
+      },
+      "id": "a1000000-0000-4000-8000-000000000002",
+      "name": "Supabase: leads CNP3",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [-100, 0],
+      "credentials": {
+        "postgres": {
+          "id": "COLOQUE_O_ID_DA_CREDENCIAL",
+          "name": "Supabase Data&Revenue"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "guard-vazio",
+              "leftValue": "={{ $input.all().length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "a1000000-0000-4000-8000-000000000003",
+      "name": "Tem linha?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [120, 0],
+      "notes": "Trava de seguranca: se a query voltar vazia, NAO limpa a planilha.\nSem isso, uma falha de conexao apagaria a aba e zeraria os leads do dashboard."
+    },
+    {
+      "parameters": {
+        "operation": "clear",
+        "documentId": {
+          "__rl": true,
+          "value": "1mTqd9d5usgx5VERtfT6tk-_P4D-na2bTDqhcy_64MkM",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 615477349,
+          "mode": "id"
+        },
+        "clear": "specificRange",
+        "range": "A2:Q100000",
+        "options": {}
+      },
+      "id": "a1000000-0000-4000-8000-000000000004",
+      "name": "Limpa A2:Q (preserva cabecalho)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [360, -100],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "COLOQUE_O_ID_DA_CREDENCIAL",
+          "name": "Google Sheets - B16"
+        }
+      },
+      "notes": "Limpa a partir da linha 2. A linha 1 e o cabecalho que o dashboard\nusa para montar as colunas (parseCSV promove a 1a linha a header)."
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1mTqd9d5usgx5VERtfT6tk-_P4D-na2bTDqhcy_64MkM",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 615477349,
+          "mode": "id"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {}
+        },
+        "options": {
+          "useAppend": true,
+          "cellFormat": "RAW"
+        }
+      },
+      "id": "a1000000-0000-4000-8000-000000000005",
+      "name": "Grava na aba Elementor",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [580, -100],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "COLOQUE_O_ID_DA_CREDENCIAL",
+          "name": "Google Sheets - B16"
+        }
+      },
+      "notes": "autoMapInputData: os nomes das colunas da view sao identicos aos do\ncabecalho da aba, entao o mapeamento e automatico.\ncellFormat RAW evita o Sheets reinterpretar telefone (+55...) e data."
+    },
+    {
+      "parameters": {
+        "content": "## CNP3 - Leads da Clint para a aba Elementor\n\nFonte: `public.dash_cnp3_leads_elementor` (Supabase Data&Revenue)\nDestino: planilha 1026, aba Elementor (gid 615477349)\n\n**Estrategia: limpa + regrava.** A Clint nao tem endpoint incremental\n(sem filtro por data), entao o fluxo reescreve o conjunto inteiro a\ncada hora. 502 linhas hoje -- barato e idempotente.\n\n**Campos vazios de proposito:** Form Name (ID), User ID, User Agent,\nUser IP, Referrer nao existem na Clint.\n\n**UTMs:** saem de `deals.fields.parameters_utm_*`. Hoje chegam vazias\nporque o fluxo de inscricao ainda nao grava UTM no deal. Quando passar\na gravar, os valores aparecem sozinhos -- a view ja le os campos.\n\n**email:** so 1 de 502 contatos tem email na Clint.",
+        "height": 380,
+        "width": 420
+      },
+      "id": "a1000000-0000-4000-8000-000000000006",
+      "name": "Como funciona",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-320, 160]
+    },
+    {
+      "parameters": {
+        "content": "## ATENCAO: ingestao da Clint esta atrasada\n\nEm 10/10/2026 o contato mais novo no Supabase era de **09/10 08:02**,\nmesmo com o sync rodando e marcando SUCCESS. A API da Clint devolve\n29.100 de 159.461 contatos por execucao e nao alcanca os recentes.\n\nEste fluxo copia fielmente o que esta no banco -- se o banco estiver\natrasado, a planilha fica atrasada tambem. Corrigir a ingestao antes\nde confiar no numero de leads do dia.",
+        "height": 260,
+        "width": 420,
+        "color": 3
+      },
+      "id": "a1000000-0000-4000-8000-000000000007",
+      "name": "Aviso ingestao",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [120, 160]
+    },
+    {
+      "parameters": {},
+      "id": "a1000000-0000-4000-8000-000000000008",
+      "name": "Sem dados: nao faz nada",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [360, 120]
+    },
+    {
+      "parameters": {
+        "errorMessage": "=Fluxo CNP3 Leads: query do Supabase voltou {{ $json.linhas ?? 0 }} linhas. Planilha NAO foi alterada."
+      },
+      "id": "a1000000-0000-4000-8000-000000000009",
+      "name": "Para e avisa",
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [580, 120],
+      "notes": "Falha visivel no historico do n8n em vez de sucesso silencioso.\nSe tiver Error Trigger + WhatsApp configurado, dispara o alerta."
+    }
+  ],
+  "connections": {
+    "De hora em hora": {
+      "main": [
+        [
+          {
+            "node": "Supabase: leads CNP3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase: leads CNP3": {
+      "main": [
+        [
+          {
+            "node": "Tem linha?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tem linha?": {
+      "main": [
+        [
+          {
+            "node": "Limpa A2:Q (preserva cabecalho)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Sem dados: nao faz nada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limpa A2:Q (preserva cabecalho)": {
+      "main": [
+        [
+          {
+            "node": "Grava na aba Elementor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sem dados: nao faz nada": {
+      "main": [
+        [
+          {
+            "node": "Para e avisa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "cnp3-leads-elementor"
+  },
+  "tags": []
+}
