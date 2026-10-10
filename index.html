@@ -2284,8 +2284,11 @@ var LANCAMENTOS = {
             dataIni:'2026-07-01', dataIniBR:'01/07/2026', anterior:'0426' },
   // CNP3 2026: aquecimento comeca 02/10 e o lancamento atravessa para novembro
   // (carrinho ate 10/11). dataIni = inicio do aquecimento, conforme briefing do BI.
+  // dataFim fixa o fim da janela padrao: sem ela o filtro usaria a ultima data
+  // com dado e encolheria conforme a aba mais atrasada (ver resetFilters).
   '1026': { nome:'CNP3 2026', titulo:'CNP3 2026 - Cromador Nivel Pro',
-            dataIni:'2026-10-02', dataIniBR:'02/10/2026', anterior:'0726' }
+            dataIni:'2026-10-02', dataIniBR:'02/10/2026',
+            dataFim:'2026-11-10', anterior:'0726' }
 };
 function cfgLanc(id) { return LANCAMENTOS[id || LANCAMENTO_ATIVO] || LANCAMENTOS['0426']; }
 
@@ -3169,7 +3172,25 @@ function resetFilters() {
     .map(function(r){ return (r['Date']||'').trim(); })
     .filter(Boolean).sort();
   var startDate = defaultStart;
-  var endDate   = (dates.length && dates[dates.length-1] <= today) ? dates[dates.length-1] : today;
+  // Fim da janela: a ultima data da aba Meta Ads servia como "ate quando ha
+  // dado", mas ela so cobre a midia. Quando a Meta esta mais atrasada que o
+  // Elementor (em 10/10/2026 a Meta tinha so 01/10 e o Elementor ja tinha 956
+  // leads ate 10/10), isso invertia a janela (02/10 -> 01/10) e zerava os leads.
+  // Agora o fim e a data mais recente entre Meta Ads, Elementor e dataFim do
+  // lancamento, limitada a hoje — nunca anterior ao inicio da janela.
+  var wpDates = cachedWP
+    .map(function(r){ return (r['Created At']||'').trim().slice(0,10); })
+    .filter(Boolean).sort();
+  var cands = [];
+  if (dates.length)   cands.push(dates[dates.length-1]);
+  if (wpDates.length) cands.push(wpDates[wpDates.length-1]);
+  var maxDado = cands.length ? cands.sort()[cands.length-1] : '';
+  var endDate = (maxDado && maxDado <= today) ? maxDado : today;
+  // dataFim do lancamento (quando configurada) mantem a janela no mes todo
+  // mesmo antes de haver dado em todos os dias.
+  var fimLanc = cfgLanc().dataFim;
+  if (fimLanc) endDate = (fimLanc <= today) ? fimLanc : today;
+  if (endDate < startDate) endDate = today;
   document.getElementById('filterStart').value = startDate;
   document.getElementById('filterEnd').value   = endDate;
   document.getElementById('compStart').value = '';
