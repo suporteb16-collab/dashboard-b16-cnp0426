@@ -492,8 +492,8 @@ input[type=date]{background:transparent;border:none;color:#ccc;font-family:'DM S
   <div id="pane-pesquisa" style="display:none">
     <div class="section-label" id="pesqTituloSecao">Pesquisa de Publico</div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr 2fr;gap:14px;margin-bottom:20px">
-      <div class="bn"><div class="bn-lbl">Total de Respondentes</div><div class="bn-val" id="bnRespondentes">-</div><div class="bn-sub" id="bnRespondentesSub">-</div></div>
-      <div class="bn"><div class="bn-lbl">Base Comparativa</div><div class="bn-val" id="bnRespondentesHist">-</div><div class="bn-sub" id="bnRespondentesHistSub">-</div></div>
+      <div class="bn"><div class="bn-lbl" id="bnRespondentesLbl">Total de Respondentes</div><div class="bn-val" id="bnRespondentes">-</div><div class="bn-sub" id="bnRespondentesSub">-</div></div>
+      <div class="bn"><div class="bn-lbl" id="bnRespondentesHistLbl">Base Comparativa</div><div class="bn-val" id="bnRespondentesHist">-</div><div class="bn-sub" id="bnRespondentesHistSub">-</div></div>
       <div class="bn"><div class="bn-lbl">% Leads-Respondentes</div><div class="bn-val" id="bnPctRespondentes">-</div><div class="bn-sub" id="bnPctRespondentesSub">respondentes / total leads</div></div>
       <div class="card" style="display:flex;align-items:center;padding:16px 22px"><span style="font-size:12px;color:var(--muted);line-height:1.7" id="pesqLegenda">-</span></div>
     </div>
@@ -501,7 +501,7 @@ input[type=date]{background:transparent;border:none;color:#ccc;font-family:'DM S
     <div class="section-sub">Homem, 18-35 anos, baixa renda, CLT/informal/desempregado, busca negocio proprio</div>
     <div class="perfil-comp-grid" id="perfilCompCards"></div>
     <div class="section-label" id="pesqTituloDist">Distribuicao por Pergunta</div>
-    <div class="section-sub">Amarelo = lancamento selecionado · Cinza = base comparativa · Threshold do perfil alvo indicado</div>
+    <div class="section-sub" id="pesqSubDist">Amarelo = lancamento selecionado · Cinza = base comparativa · Threshold do perfil alvo indicado</div>
     <div class="pesquisa-grid" id="pesquisaCharts"></div>
 
     <!-- PESQUISA ALUNOS -->
@@ -2286,9 +2286,15 @@ var LANCAMENTOS = {
   // (carrinho ate 10/11). dataIni = inicio do aquecimento, conforme briefing do BI.
   // dataFim fixa o fim da janela padrao: sem ela o filtro usaria a ultima data
   // com dado e encolheria conforme a aba mais atrasada (ver resetFilters).
+  // `pesqPorLead`: a aba Pesquisa do 1026 e a MESMA planilha do CNP2 com as
+  // respostas novas no fim, e o `Carimbo de data/hora` nao separa os dois
+  // lancamentos (19.5k linhas achatadas em 2026-07-01 e as de outubro param em
+  // 01/10, um dia antes do dataIni). Por isso o recorte do CNP3 e feito por
+  // telefone: so entra quem respondeu a pesquisa E esta na base de leads
+  // (aba Elementor), uma resposta por telefone. Ver filtrarPesqPorLeads.
   '1026': { nome:'CNP3 2026', titulo:'CNP3 2026 - Cromador Nivel Pro',
             dataIni:'2026-10-02', dataIniBR:'02/10/2026',
-            dataFim:'2026-11-10', anterior:'0726' }
+            dataFim:'2026-11-10', anterior:'0726', pesqPorLead:true }
 };
 function cfgLanc(id) { return LANCAMENTOS[id || LANCAMENTO_ATIVO] || LANCAMENTOS['0426']; }
 
@@ -3064,14 +3070,38 @@ function processWP(filtered) {
 //          + janela de lancamento do lancamento anterior (base comparativa)
 // Para o CNP2 a planilha tem carimbo unico (01/07/2026), entao o "historico"
 // vem inteiramente do CNP1 — que e exatamente o comparativo pedido.
-function processPesquisa(rows, rowsAnterior) {
-  var cfg   = cfgLanc();
+function processPesquisa(rows, rowsAnterior, rowsWP) {
+  var cfg    = cfgLanc();
+  var cfgAnt = cfg.anterior ? cfgLanc(cfg.anterior) : null;
+
+  // ── Recorte por telefone (CNP3 em diante) ─────────────────────────────────
+  // A regua comparativa e o lancamento anterior inteiro (CNP2), nao o resto
+  // desta planilha: o carimbo nao separa os lancamentos, entao "o que sobrou
+  // do filtro" nao e uma base valida.
+  if (cfg.pesqPorLead) {
+    var telSet   = telefonesDosLeads(rowsWP);
+    var nTel     = Object.keys(telSet).length;
+    var lancRows = filtrarPesqPorLeads(rows, telSet);
+    var histRowsL = [];
+    if (cfgAnt && rowsAnterior && rowsAnterior.length) {
+      histRowsL = splitPesqByDate(rowsAnterior, cfgAnt.dataIni).lanc;
+    }
+    return {
+      lanc: processarPesqRows(lancRows),
+      hist: processarPesqRows(histRowsL),
+      lancDesc: 'cruzado por telefone com a base de leads (' + nTel.toLocaleString('pt-BR') + ' leads)',
+      histDesc: cfgAnt ? (cfgAnt.nome + ' — regua comparativa') : 'sem base comparativa',
+      porLead: true,
+      leadsTel: nTel
+    };
+  }
+
+  // ── Recorte por data (CNP1/CNP2) ──────────────────────────────────────────
   var split = splitPesqByDate(rows, cfg.dataIni);
   var histRows = split.hist.slice();
   var fontes = [];
   if (split.hist.length) fontes.push('anteriores a ' + cfg.dataIniBR);
 
-  var cfgAnt = cfg.anterior ? cfgLanc(cfg.anterior) : null;
   if (cfgAnt && rowsAnterior && rowsAnterior.length) {
     var splitAnt = splitPesqByDate(rowsAnterior, cfgAnt.dataIni);
     if (splitAnt.lanc.length) {
@@ -3084,7 +3114,8 @@ function processPesquisa(rows, rowsAnterior) {
     lanc: processarPesqRows(split.lanc),
     hist: processarPesqRows(histRows),
     lancDesc: 'a partir de ' + cfg.dataIniBR,
-    histDesc: fontes.length ? fontes.join(' + ') : 'sem base comparativa'
+    histDesc: fontes.length ? fontes.join(' + ') : 'sem base comparativa',
+    porLead: false
   };
 }
 
@@ -3149,7 +3180,9 @@ function applyFilters() {
     mp  = processMeta(filterMeta(cachedMeta, f.c1, f.c2));
     wpp = processWP(filterWP(cachedWP, f.c1, f.c2));
   }
-  var pesq = processPesquisa(cachedPesq, cachedPesqAnterior);
+  // Pesquisa recebe a base de leads crua (sem filtro de data): o cruzamento por
+  // telefone define o recorte do lancamento, nao a janela do topo.
+  var pesq = processPesquisa(cachedPesq, cachedPesqAnterior, cachedWP);
   var badge = document.getElementById('compBadge');
   if (badge) badge.style.display = (f.c1 && f.c2) ? 'inline-flex' : 'none';
   // Vendas: para o CNP1 (0426) mantém a janela histórica travada do carrinho
@@ -4866,6 +4899,57 @@ function parseDatePesq(str) {
   return null;
 }
 
+// ── TELEFONE: chave de cruzamento Pesquisa ↔ Elementor ───────────────────────
+// As duas abas gravam em formatos diferentes: a Pesquisa usa mascara
+// `(18) 99613-4821` e o Elementor usa `5542984359180`. Normaliza para
+// DDD + 8 digitos (sem 55, sem o 9o digito) para casar os dois lados.
+function normTelPesq(v) {
+  var d = String(v || '').replace(/\D/g, '');
+  if (!d) return null;
+  if (d.length > 11 && d.indexOf('55') === 0) d = d.slice(2);  // tira DDI
+  if (d.length === 11 && d.charAt(2) === '9') d = d.slice(0,2) + d.slice(3); // tira 9o digito
+  return d.length === 10 ? d : null;
+}
+
+// Coluna de telefone da aba Pesquisa (cabecalho veio como `TELEFONE`; aceita
+// variantes para nao quebrar se o formulario for reconfigurado).
+function telDaPesquisa(row) {
+  var keys = Object.keys(row);
+  for (var i = 0; i < keys.length; i++) {
+    var k = keys[i].replace(/\s+/g,' ').trim().toLowerCase();
+    if (k === 'telefone' || k === 'celular' || k === 'whatsapp' ||
+        k.indexOf('telefone') >= 0 || k.indexOf('whatsapp') >= 0) {
+      var n = normTelPesq(row[keys[i]]);
+      if (n) return n;
+    }
+  }
+  return null;
+}
+
+// Set de telefones normalizados da base de leads (aba Elementor) do lancamento.
+function telefonesDosLeads(rowsWP) {
+  var set = {};
+  (rowsWP || []).forEach(function(r) {
+    var n = normTelPesq(r['Telefone*'] || r['Telefone'] || r['telefone'] || '');
+    if (n) set[n] = true;
+  });
+  return set;
+}
+
+// Mantem so quem tem telefone na pesquisa E na base de leads, uma resposta por
+// telefone (a mais recente). Usado quando `cfg.pesqPorLead` esta ligado.
+function filtrarPesqPorLeads(rows, telSet) {
+  var porTel = {};
+  (rows || []).forEach(function(row) {
+    var tel = telDaPesquisa(row);
+    if (!tel || !telSet[tel]) return;
+    var d = parseDatePesq(row['Carimbo de data/hora'] || '') || '';
+    var atual = porTel[tel];
+    if (!atual || d >= atual.d) porTel[tel] = { d: d, row: row };
+  });
+  return Object.keys(porTel).map(function(t){ return porTel[t].row; });
+}
+
 function processarPesqRows(rows) {
   var result = {};
   var total  = 0;
@@ -4934,21 +5018,50 @@ function renderPesquisa(pesqLanc, pesqHist, pesqMeta) {
 
   // Titulo e legendas do painel — seguem o lancamento selecionado
   setEl('pesqTituloSecao', 'Pesquisa de Publico - ' + cfg.nome);
-  setHtml('pesqLegenda',
-      'Comparativo: <strong>' + cfg.nome + '</strong> (' + (meta.lancDesc || 'a partir de ' + cfg.dataIniBR) + ') '
-    + 'vs base comparativa <strong>' + (meta.histDesc || nomeHist) + '</strong> vs perfil alvo. '
-    + 'Barras <strong style="color:var(--yellow)">amarelas</strong> = dentro do perfil alvo. '
-    + 'Barras <strong style="color:#888">cinzas</strong> = base comparativa. '
-    + 'Badge <strong style="color:#16a34a">Perto</strong> = acima do threshold. '
-    + 'Delta indica variacao em pp vs ' + nomeHist + '. '
-    + '<em>Esta aba e segmentada por lancamento, nao pelo filtro de datas do topo.</em>');
-  setEl('pesqTituloDist', 'Distribuicao por Pergunta — ' + cfg.nome + ' vs ' + nomeHist);
+  if (meta.porLead) {
+    // Metodologia precisa ficar explicita: o recorte e por cruzamento de
+    // telefone com a base de leads, e a regua comparativa e o CNP2.
+    setHtml('pesqLegenda',
+        '<strong>Como este recorte foi apurado.</strong> '
+      + 'Entram em <strong>' + cfg.nome + '</strong> apenas os respondentes cujo <strong>telefone consta '
+      + 'na pesquisa E na base de leads</strong> (aba Elementor): '
+      + (meta.leadsTel || 0).toLocaleString('pt-BR') + ' leads cruzados, '
+      + 'telefone normalizado (DDD + 8 digitos) nos dois lados. '
+      + 'Uma resposta por telefone (a mais recente). '
+      + 'Quem respondeu sem telefone, ou com telefone fora da base de leads, <strong>nao entra</strong>. '
+      + 'O criterio e esse porque a planilha da pesquisa e compartilhada com o '
+      + nomeHist + ' e o carimbo de data/hora nao separa os dois lancamentos. '
+      + '<br><strong>Regua comparativa: ' + nomeHist + '</strong> (barras '
+      + '<strong style="color:#888">cinzas</strong> e deltas em pp), vinda da planilha do '
+      + nomeHist + '. '
+      + 'Barras <strong style="color:var(--yellow)">amarelas</strong> = dentro do perfil alvo. '
+      + 'Badge <strong style="color:#16a34a">Perto</strong> = acima do threshold. '
+      + '<em>Esta aba nao usa o filtro de datas do topo.</em>');
+  } else {
+    setHtml('pesqLegenda',
+        'Comparativo: <strong>' + cfg.nome + '</strong> (' + (meta.lancDesc || 'a partir de ' + cfg.dataIniBR) + ') '
+      + 'vs base comparativa <strong>' + (meta.histDesc || nomeHist) + '</strong> vs perfil alvo. '
+      + 'Barras <strong style="color:var(--yellow)">amarelas</strong> = dentro do perfil alvo. '
+      + 'Barras <strong style="color:#888">cinzas</strong> = base comparativa. '
+      + 'Badge <strong style="color:#16a34a">Perto</strong> = acima do threshold. '
+      + 'Delta indica variacao em pp vs ' + nomeHist + '. '
+      + '<em>Esta aba e segmentada por lancamento, nao pelo filtro de datas do topo.</em>');
+  }
+  setEl('pesqTituloDist', 'Distribuicao por Pergunta — ' + cfg.nome + ' vs ' + nomeHist
+    + (meta.porLead ? ' (regua comparativa)' : ''));
 
   // big numbers
   setEl('bnRespondentes', pesqLanc.total);
   setEl('bnRespondentesSub', meta.lancDesc || ('a partir de ' + cfg.dataIniBR));
   setEl('bnRespondentesHist', temHist ? pesqHist.total : '-');
   setEl('bnRespondentesHistSub', temHist ? (meta.histDesc || nomeHist) : 'sem base comparativa');
+  // Rotulos dos cards: deixar o criterio visivel sem precisar ler a legenda
+  setEl('bnRespondentesLbl', meta.porLead ? 'Respondentes que sao leads' : 'Total de Respondentes');
+  setEl('bnRespondentesHistLbl', meta.porLead ? ('Regua comparativa (' + nomeHist + ')') : 'Base Comparativa');
+  if (meta.porLead) {
+    setEl('pesqSubDist', 'Amarelo = ' + cfg.nome + ' (respondentes cruzados por telefone com a base de leads)'
+      + ' · Cinza = ' + nomeHist + ' (regua comparativa) · Threshold do perfil alvo indicado');
+  }
 
   // Cards de comparacao
   var compEl = document.getElementById('perfilCompCards');
