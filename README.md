@@ -405,10 +405,11 @@ Gerados automaticamente com base nos dados do período selecionado.
 
 | Métrica | Fórmula |
 |---|---|
-| CPL (Visão Geral) | Spend [CNP][LEADS] ÷ Leads pagos (Elementor) |
-| CPL por Criativo | Spend (Meta, por Ad Name) ÷ Leads (Elementor, por utm_content) |
+| CPL (Visão Geral) | Spend [CNP][LEADS] **Meta + Google** ÷ Leads pagos (Elementor) |
+| CPL por Criativo | Spend **Meta + Google** (por `adKey(Ad Name)`) ÷ Leads (Elementor, por `adKey(utm_content)`) |
 | CPL por Adset | Spend (Meta, por Adset Name) ÷ Leads (Elementor, por utm_medium) |
 | CPL por Campanha | Spend (Meta) ÷ Action Leads (Meta) |
+| CPL por Dia | (Spend Meta + Spend Google do dia) ÷ Leads pagos do dia |
 | CPM | Spend ÷ Impressões × 1.000 |
 | CPC | Spend ÷ Cliques |
 | CTR | Cliques ÷ Impressões × 100 |
@@ -441,7 +442,9 @@ index.html (dashboard_cnp0426_v8.html)
 │   └── 4 abas: Visão Geral / Planejamento / Pesquisa / Insights
 └── JavaScript (ES5 puro — sem async/await, sem template literals aninhados)
     ├── parseCSV()            — parser robusto com suporte a aspas e vírgulas
+    ├── adKey()               — normaliza nome de criativo (ver "Atribuição de criativos")
     ├── processMeta()         — agrega spend, métricas, byAdset, byCamp (filtro [CNP])
+    ├── processGoogle()       — spend, byDay, googleByAd, byCamp e conv do Google Ads
     ├── processWP()           — agrega leads, byContent, byMedium, bySource, byTerm
     ├── processPesquisa()     — separa lançamento vs histórico por data de corte
     ├── processarPesqRows()   — converte texto livre → slug via TEXTO_PARA_SLUG
@@ -460,6 +463,83 @@ index.html (dashboard_cnp0426_v8.html)
 
 ---
 
+## Atribuição de criativos e Google Ads (v9)
+
+Três armadilhas conhecidas desta base. Quem for mexer no cruzamento de
+investimento × leads precisa conhecer as três.
+
+### 1. `adKey()` — o sufixo " – Cópia"
+
+O cruzamento `utm_content` (Elementor) × `Ad Name` (Meta/Google) era feito por
+**string exata**. Quando um anúncio é duplicado no Gerenciador, o Meta anexa
+**` – Cópia`** (ou **`(campanha principal)`**) ao `Ad Name`, mas a UTM continua
+carregando o nome herdado. A chave não batia e o criativo aparecia na tabela
+com **investimento R$ 0,00 mesmo tendo centenas de leads**.
+
+`adKey()` normaliza os dois lados: remove acento, uniformiza travessão
+(`-` / `–` / `—`), corta os sufixos de duplicação (de forma repetida, para
+` - Copia - Copia`) e devolve em minúsculas.
+
+> No lançamento 1026 isso derrubou os criativos zerados de **17 de 26
+> (3.800 leads)** para **2 de 18 (37 leads)**.
+
+Como `adKey()` devolve minúsculas, existem dois mapas só para exibição:
+`m.adLabel` (Meta) e `wp.contentLabel` (Elementor). **O rótulo prefere o
+`Ad Name` do Meta**, que já vem sem o sufixo.
+
+Os 2 zerados que sobram são legítimos e **não são bug do dashboard**:
+- `{{ad.name}}` — macro do Meta que não foi substituída. É erro de setup na
+  campanha, corrigir no Gerenciador de Anúncios.
+- `link_in_bio` — tráfego orgânico de bio, não tem investimento mesmo.
+
+### 2. Google Ads nos gráficos diários
+
+`processGoogle()` devolvia apenas `{spend, spendFrio, spendQuente}`. Os
+gráficos diários liam somente `m.byDay`, então **o investimento do Google não
+aparecia** e o CPL diário saía subestimado.
+
+Hoje devolve também `byDay`, `googleByAd`, `byCamp` e `conv`. Somam Meta +
+Google: gráficos diários, tabela de criativos, card de melhor CPL,
+`spendParaTerm()` e os insights.
+
+> No 1026 o total do período passou de R$ 8.059,15 (só Meta) para
+> **R$ 12.324,95**, e o CPL de 19/10 de R$ 0,67 para **R$ 1,07**.
+
+Os 4 gráficos da seção *Evolução Diária* têm filtro **Meta + Google / Somente
+Meta / Somente Google**. No modo combinado o tooltip mostra a quebra por
+plataforma.
+
+⚠️ A aba `Dados Google Ads` traz **a conta inteira**, não só o lançamento
+(aparecem datas de lançamentos anteriores). Filtrar pela janela é obrigatório.
+
+⚠️ Conferir sempre se a aba exportada **tem a linha de cabeçalho**: sem ela o
+`parseCSV` promove a primeira linha de dados a header, nenhuma coluna esperada
+existe e o investimento Google soma **R$ 0,00 em silêncio**.
+
+### 3. `[DIST]` e `[AQUECIMENTO]` são a mesma fase
+
+As campanhas de distribuição vêm com **as duas tags no mesmo nome**:
+
+```
+[B16] [DIST] [AQUECIMENTO] [CNP] Post do Instagram: Banho de Cromo...
+```
+
+Elas apontam exatamente as mesmas linhas — não são fases distintas.
+`tagCasa()` + `TAG_SINONIMOS` tratam as duas como sinônimos, então a fase
+funciona com qualquer uma das tags na coluna `TAG CAMPANHA` da aba
+Planejamento, sem dupla contagem.
+
+> ⚠️ **Não colocar as duas como linhas separadas na aba Planejamento.** O
+> matcher usa `break` na primeira tag que casa: a primeira fase levaria toda a
+> verba e a segunda ficaria zerada.
+
+A tabela *Detalhe por Fase* exibe `Aquecimento/Distribuição` com
+`TAG: [AQUECIMENTO]/[DIST]`, em ordem fixa — o rótulo não muda conforme a tag
+escolhida na planilha. A timeline mantém o nome curto por causa do
+`white-space: nowrap`.
+
+---
+
 ## Histórico de Versões
 
 | Versão | O que mudou |
@@ -472,6 +552,7 @@ index.html (dashboard_cnp0426_v8.html)
 | v6 | Previsão de leads com slider de investimento e 3 cenários |
 | v7 | Aba Pesquisa com comparativo lançamento vs histórico (≥08/04 vs <08/04), novo card % leads-respondentes, gráfico CPL com eixo zero |
 | v8 | Aba Planejamento com timeline e % por fase; tabelas de Adsets e Campanhas; filtro Visão Geral somente [CNP]+[LEADS]; pesquisa focada em Q1/Q2/Q4/Q5/Q8; parser numérico BR corrigido |
+| **v9** · 19/10/2026 | `adKey()` normaliza " – Cópia"/"(campanha principal)" e acaba com os criativos zerados; Google Ads passa a entrar nos gráficos diários, tabelas de criativo e insights; filtro Meta × Google na Evolução Diária; `[DIST]` tratado como sinônimo de `[AQUECIMENTO]`; corrige `_lastMByAd`, que nunca era preenchido e deixava o ROAS por criativo sempre em `-` |
 
 ---
 
