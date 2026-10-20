@@ -84,6 +84,14 @@ input[type=date]{background:transparent;border:none;color:#ccc;font-family:'DM S
 .main{max-width:1380px;margin:0 auto;padding:24px 32px 0}
 .section-label{font-size:9px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--black);margin-bottom:14px;display:flex;align-items:center;gap:10px}
 .section-label::after{content:'';flex:1;height:1px;background:var(--border2)}
+.canal-filtro{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:-4px 0 14px}
+.canal-btns{display:inline-flex;border:1px solid var(--border2);border-radius:8px;overflow:hidden}
+.canal-btn{font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;padding:7px 14px;background:transparent;color:var(--muted);border:none;cursor:pointer;transition:background .15s,color .15s}
+.canal-btn+.canal-btn{border-left:1px solid var(--border2)}
+.canal-btn:hover{background:rgba(212,168,0,.08);color:var(--black)}
+.canal-btn-on{background:var(--black);color:#fff}
+.canal-btn-on:hover{background:var(--black);color:#fff}
+.canal-sub{font-size:11px;color:var(--muted);font-weight:500}
 .section-sub{font-size:11px;color:var(--muted);margin-bottom:16px;margin-top:-8px}
 .bignumbers{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px}
 .bn{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 22px;position:relative;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06)}
@@ -427,6 +435,14 @@ input[type=date]{background:transparent;border:none;color:#ccc;font-family:'DM S
     </div>
 
     <div class="section-label">Evolucao Diaria</div>
+    <div class="canal-filtro">
+      <div class="canal-btns">
+        <button id="btnCanal-todos"  class="canal-btn canal-btn-on">Meta + Google</button>
+        <button id="btnCanal-meta"   class="canal-btn">Somente Meta</button>
+        <button id="btnCanal-google" class="canal-btn">Somente Google</button>
+      </div>
+      <span class="canal-sub" id="canalDiaSub">-</span>
+    </div>
     <div class="grid2"><div class="card"><div class="card-title">💰 Investimento por Dia</div><canvas id="cSpend" height="170"></canvas></div><div class="card"><div class="card-title">👥 Leads Pagos por Dia</div><canvas id="cLeads" height="170"></canvas></div></div>
     <div class="grid2" style="margin-bottom:28px"><div class="card"><div class="card-title">📉 CPL por Dia</div><canvas id="cCPL" height="170"></canvas></div><div class="card"><div class="card-title">🔵 Leads Pagos vs Organicos</div><canvas id="cPagOrg" height="170"></canvas></div></div>
 
@@ -2568,11 +2584,35 @@ function fDelta(curr, prev) {
 function setEl(id, val) { var el = document.getElementById(id); if (el) el.textContent = val; }
 function setHtml(id, val) { var el = document.getElementById(id); if (el) el.innerHTML = val; }
 
+// ── CHAVE DE CRIATIVO ─────────────────────────────────────────────────────────
+// O cruzamento criativo x investimento casava `utm_content` (Elementor) com
+// `Ad Name` (Meta/Google) por string exata. Quando o anuncio e duplicado no
+// Gerenciador o Meta anexa " - Copia" / " (campanha principal)" ao Ad Name, mas
+// a UTM mantem o nome herdado: a chave nao batia e o criativo aparecia com
+// investimento R$ 0,00 mesmo tendo leads (17 de 26 linhas no 1026, 3.800 leads).
+// adKey() normaliza os dois lados para a mesma chave.
+function adKey(s) {
+  if (!s) return '';
+  var t = String(s).trim();
+  // normaliza acento (Copia/Cópia) e travessao (-, –, —) antes de cortar sufixos
+  try { t = t.normalize('NFD').replace(/[̀-ͯ]/g, ''); } catch(e) {}
+  t = t.replace(/[‒–—―]/g, '-');
+  // remove sufixos de duplicacao, repetidamente (" - Copia - Copia")
+  var prev;
+  do {
+    prev = t;
+    t = t.replace(/\s*-\s*copia\s*(\d+)?\s*$/i, '');
+    t = t.replace(/\s*\(\s*copia\s*(\d+)?\s*\)\s*$/i, '');
+    t = t.replace(/\s*\(\s*campanha\s+principal\s*\)\s*$/i, '');
+  } while (t !== prev);
+  return t.replace(/\s+/g, ' ').trim().toLowerCase();
+}
+
 // ── PROCESSAR META ────────────────────────────────────────────────────────────
 function processMeta(rows) {
   var spend=0, reach=0, imp=0, clk=0, lpv=0, spendFrio=0, spendQuente=0;
   var spendReels=0, spendStories=0, spendFB=0, spendIGFeed=0;
-  var byDay = {}, metaByAd = {}, byAdset = {}, byCamp = {};
+  var byDay = {}, metaByAd = {}, byAdset = {}, byCamp = {}, adLabel = {};
   for (var i = 0; i < rows.length; i++) {
     var r = rows[i];
     var s   = numFromRow(r, 'Spend (Cost, Amount Spent)');
@@ -2590,7 +2630,13 @@ function processMeta(rows) {
     if ((r['Campaign Name'] || '').indexOf('FRIO') >= 0)   spendFrio   += s;
     if ((r['Campaign Name'] || '').indexOf('QUENTE') >= 0) spendQuente += s;
     var ad = (r['Ad Name'] || '').trim();
-    if (ad) { if (!metaByAd[ad]) metaByAd[ad] = 0; metaByAd[ad] += s; }
+    if (ad) {
+      var adK = adKey(ad);
+      if (!metaByAd[adK]) metaByAd[adK] = 0;
+      metaByAd[adK] += s;
+      // guarda o nome mais curto visto para a chave (sem " - Copia") p/ exibicao
+      if (!adLabel[adK] || ad.length < adLabel[adK].length) adLabel[adK] = ad;
+    }
     // Spend por plataforma — inferido pelo nome do ad
     var adUpper = ad.toUpperCase();
     var isReels   = adUpper.indexOf('REELS') >= 0 || adUpper.indexOf('REEL') >= 0;
@@ -2618,7 +2664,7 @@ function processMeta(rows) {
   return {spend:spend, reach:reach, imp:imp, clk:clk, lpv:lpv,
           byDay:byDay, spendFrio:spendFrio, spendQuente:spendQuente,
           spendReels:spendReels, spendStories:spendStories, spendFB:spendFB, spendIGFeed:spendIGFeed,
-          metaByAd:metaByAd, byAdset:byAdset, byCamp:byCamp};
+          metaByAd:metaByAd, adLabel:adLabel, byAdset:byAdset, byCamp:byCamp};
 }
 
 
@@ -2962,20 +3008,42 @@ function processMetas(rows) {
 // ── PROCESSAR GOOGLE ADS ──────────────────────────────────────────────────────
 function processGoogle(rows, d1, d2) {
   var spend = 0, spendFrio = 0, spendQuente = 0;
+  var byDay = {}, googleByAd = {}, byCamp = {}, conv = 0;
   rows.forEach(function(r) {
     var d = (r['Date (Segment)'] || r['Date'] || r['Dia'] || '').trim().slice(0, 10);
     if (d1 && d2 && (d < d1 || d > d2)) return;
     var s = numFromRow(r, 'Cost (Spend, Amount Spent)');
     if (!s) s = numFromRow(r, 'Cost');
     spend += s;
+    conv  += numFromRow(r, 'Conversions');
+    // Spend por dia — alimenta os graficos diarios junto com o Meta
+    if (d) {
+      if (!byDay[d]) byDay[d] = {spend:0};
+      byDay[d].spend += s;
+    }
+    // Spend por criativo — mesma chave (Ad Name) usada no metaByAd
+    var ad = (r['Ad Name'] || '').trim();
+    if (ad) {
+      var k = adKey(ad);
+      if (!googleByAd[k]) googleByAd[k] = 0;
+      googleByAd[k] += s;
+    }
     // Investimento em captação de leads (mesmo criterio do Meta: campanha [CNP] + [LEADS])
     var c = (r['Campaign Name'] || '').toUpperCase();
     if (c.indexOf('[CNP]') >= 0 && c.indexOf('[LEADS]') >= 0) {
       if (c.indexOf('FRIO') >= 0)   spendFrio   += s;
       if (c.indexOf('QUENTE') >= 0) spendQuente += s;
     }
+    // Campanha — apenas campanhas [CNP], espelha o byCamp do Meta
+    var campRaw = (r['Campaign Name'] || '').trim();
+    if (campRaw && c.indexOf('[CNP]') >= 0) {
+      if (!byCamp[campRaw]) byCamp[campRaw] = {spend:0, leads:0};
+      byCamp[campRaw].spend += s;
+      byCamp[campRaw].leads += numFromRow(r, 'Conversions');
+    }
   });
-  return { spend: spend, spendFrio: spendFrio, spendQuente: spendQuente };
+  return { spend: spend, spendFrio: spendFrio, spendQuente: spendQuente,
+           byDay: byDay, googleByAd: googleByAd, byCamp: byCamp, conv: conv };
 }
 
 // ── PROCESSAR WP ─────────────────────────────────────────────────────────────
@@ -3014,7 +3082,7 @@ function processWP(filtered) {
   var allLeads = cachedWP.filter(function(r){ return (r['Nome*'] || r['Nome'] || '').trim(); });
   var pagosTotal = 0, organicosTotal = 0;
 
-  var byDay={}, byContent={}, bySource={frio:0, quente:0}, byTerm={}, byMedium={}, byTermContent={};
+  var byDay={}, byContent={}, bySource={frio:0, quente:0}, byTerm={}, byMedium={}, byTermContent={}, contentLabel={};
   var byCanal = { meta: 0, google: 0, organico: 0, formsMeta: 0, semTracking: 0 };
 
   for (var i = 0; i < filtered.length; i++) {
@@ -3023,10 +3091,15 @@ function processWP(filtered) {
     var pago = isPago(r);
     var canal = getCanalLead(r);
 
-    // byDay — pagos vs orgânicos
+    // byDay — pagos vs orgânicos (+ quebra por plataforma p/ o filtro Meta x Google)
     if (d) {
-      if (!byDay[d]) byDay[d] = {pagos:0, org:0};
-      if (pago) byDay[d].pagos++; else byDay[d].org++;
+      if (!byDay[d]) byDay[d] = {pagos:0, org:0, pagosMeta:0, pagosGoogle:0};
+      if (pago) {
+        byDay[d].pagos++;
+        // utm_source googleads* => Google; demais pagos (frio/quente) => Meta
+        if ((r['utm_source'] || '').toLowerCase().indexOf('googleads') >= 0 || canal === 'google') byDay[d].pagosGoogle++;
+        else byDay[d].pagosMeta++;
+      } else byDay[d].org++;
     }
 
     // Contadores totais
@@ -3041,7 +3114,13 @@ function processWP(filtered) {
 
     // Outros agregadores (só para leads pagos e forms — com utm preenchido)
     var cont = (r['utm_content'] || '').trim();
-    if (cont) { if (!byContent[cont]) byContent[cont] = 0; byContent[cont]++; }
+    if (cont) {
+      // mesma normalizacao do Ad Name (adKey) para o cruzamento com o spend
+      var contK = adKey(cont);
+      if (!byContent[contK]) byContent[contK] = 0;
+      byContent[contK]++;
+      if (!contentLabel[contK] || cont.length < contentLabel[contK].length) contentLabel[contK] = cont;
+    }
     var src = (r['utm_source'] || '').toLowerCase();
     // Inclui variantes como "googleads-frio" / "googleads-quente", nao so o valor exato
     if (src.indexOf('frio') >= 0) bySource.frio++; else if (src.indexOf('quente') >= 0) bySource.quente++;
@@ -3050,8 +3129,10 @@ function processWP(filtered) {
       if (!byTerm[term]) byTerm[term] = 0;
       byTerm[term]++;
       if (cont) {
+        // chave normalizada: spendParaTerm() cruza isto com metaByAd/googleByAd
+        var contKT = adKey(cont);
         if (!byTermContent[term]) byTermContent[term] = {};
-        byTermContent[term][cont] = (byTermContent[term][cont] || 0) + 1;
+        byTermContent[term][contKT] = (byTermContent[term][contKT] || 0) + 1;
       }
     }
     var med = (r['utm_medium'] || '').trim();
@@ -3059,7 +3140,7 @@ function processWP(filtered) {
   }
 
   return {total:filtered.length, pagos:pagosTotal, organicos:organicosTotal,
-          byDay:byDay, byContent:byContent, bySource:bySource, byTerm:byTerm,
+          byDay:byDay, byContent:byContent, contentLabel:contentLabel, bySource:bySource, byTerm:byTerm,
           byMedium:byMedium, byTermContent:byTermContent, byCanal:byCanal, atualizadoEm:atualizadoEm};
 }
 
@@ -3781,9 +3862,10 @@ function renderVendas(kiwify, metas, wp, rmktSpendDireto, totalAdsDireto, abando
     var rows = criEntries.map(function(e){
       var vendC = e[1];
       var fatC  = 0; // fat por criativo exigiria join — mostrar N/D
-      var spC   = 0; // spend por utm_content do Meta
-      // Tentar pegar spend do metaByAd via window
-      if (window._lastMByAd && window._lastMByAd[e[0]]) spC = window._lastMByAd[e[0]];
+      var spC   = 0; // spend por utm_content — Meta + Google, chave normalizada
+      var kC    = (typeof adKey === 'function') ? adKey(e[0]) : e[0];
+      if (window._lastMByAd && window._lastMByAd[kC]) spC += window._lastMByAd[kC];
+      if (window._lastGByAd && window._lastGByAd[kC]) spC += window._lastGByAd[kC];
       var roas  = spC > 0 ? (vendC * TICKET / spC).toFixed(2) : '-';
       var cac2  = vendC > 0 ? (spC / vendC).toFixed(2) : '-';
       return '<tr><td style="padding:12px 16px"><strong>'+e[0]+'</strong></td>'
@@ -4061,6 +4143,11 @@ function renderDashboard(m, mAll, mp, wp, wpp, pesq, planRows, google, kiwify, m
   kiwify = kiwify || {vendas:0,fat:0,reembolsos:0,fatReemb:0,aguardando:0,byDia:{},bySemDia:{},byHora:{},byProduto:{},byUTMSource:{},byUTMTerm:{},byUTMContent:{},byUTMMedium:{},byVendedor:{larissa:0,marcela:0,kamilly:0,ray:0,paula:0},byPagamento:{},emailsSet:{},telefonesSet:{}};
   metas  = metas  || {vendas:0,fat:0,leads:0,conv:0,rmkt:0,roas:0,cac:0};
   window._lastRenderArgs = [m, mAll, mp, wp, wpp, pesq, planRows, google];
+  // expoe os mapas de spend por criativo (chave adKey) para as tabelas de vendas
+  // e os insights. _lastMByAd nunca era preenchido: o ROAS por criativo ficava '-'.
+  window._lastMByAd = m.metaByAd || {};
+  window._lastGByAd = (google && google.googleByAd) ? google.googleByAd : {};
+  window._lastAdLabel = m.adLabel || {};
   var spend=m.spend, reach=m.reach, imp=m.imp, clk=m.clk, lpv=m.lpv;
   var leadsP = wp.pagos;
   var googleSpend = google ? google.spend : 0;
@@ -4091,17 +4178,19 @@ function renderDashboard(m, mAll, mp, wp, wpp, pesq, planRows, google, kiwify, m
 
   // Melhor CPL criativo — excluir criativos sem investimento (spend=0)
   var bestCPL=Infinity, bestAd='-', bestLeads=0, bestSpend=0;
+  var gByAdK = (google && google.googleByAd) ? google.googleByAd : {};
   var contentKeys = Object.keys(wp.byContent);
   for (var i = 0; i < contentKeys.length; i++) {
     var ad = contentKeys[i];
     var leads = wp.byContent[ad];
-    var s = m.metaByAd[ad] || 0;
+    var s = (m.metaByAd[ad] || 0) + (gByAdK[ad] || 0); // Meta + Google
     if (s === 0) continue; // sem investimento — ignorar
     var c = leads > 0 ? s / leads : Infinity;
     if (c < bestCPL) { bestCPL=c; bestAd=ad; bestLeads=leads; bestSpend=s; }
   }
+  var bestLabel = (m.adLabel && m.adLabel[bestAd]) || (wp.contentLabel && wp.contentLabel[bestAd]) || bestAd;
   setEl('bnBestCPLVal', bestCPL < Infinity ? fBRL(bestCPL) : '-');
-  setEl('bnBestCPLName', bestAd.replace(/^\d+\s*-\s*(VID\s*-\s*)?/i,'').trim());
+  setEl('bnBestCPLName', bestLabel.replace(/^\d+\s*-\s*(VID\s*-\s*)?/i,'').trim());
   setEl('bnBestCPLSub', bestLeads + ' leads · ' + fBRL(bestSpend) + ' investidos');
 
   // Funil
@@ -4115,36 +4204,90 @@ function renderDashboard(m, mAll, mp, wp, wpp, pesq, planRows, google, kiwify, m
   setEl('fRateLPV',  fPct(rLPV) + ' dos cliques');
   setEl('fRateLead', fPct(rLead) + ' do LPV');
 
-  // Dias
+  // Dias — o spend diario agora soma Meta + Google (antes lia so m.byDay, o que
+  // deixava o grafico fora do card de Investimento e subestimava o CPL diario).
+  var gByDay = (google && google.byDay) ? google.byDay : {};
   var daysSet = {};
   Object.keys(wp.byDay).forEach(function(d){ daysSet[d]=1; });
   Object.keys(m.byDay).forEach(function(d){ daysSet[d]=1; });
+  Object.keys(gByDay).forEach(function(d){ daysSet[d]=1; });
   var allDays = Object.keys(daysSet).sort();
-  var labels    = allDays.map(function(d){ return d.slice(5).split('-').reverse().join('/'); });
-  var spendArr  = allDays.map(function(d){ return m.byDay[d] ? m.byDay[d].spend : 0; });
-  var leadsArr  = allDays.map(function(d){ return wp.byDay[d] ? wp.byDay[d].pagos : 0; });
-  var orgArr    = allDays.map(function(d){ return wp.byDay[d] ? wp.byDay[d].org : 0; });
-  var cplArr    = allDays.map(function(d, i){ return leadsArr[i] > 0 ? +(spendArr[i]/leadsArr[i]).toFixed(2) : null; });
+  var labels       = allDays.map(function(d){ return d.slice(5).split('-').reverse().join('/'); });
+  var spendMetaArr = allDays.map(function(d){ return m.byDay[d]  ? m.byDay[d].spend  : 0; });
+  var spendGoogArr = allDays.map(function(d){ return gByDay[d]   ? gByDay[d].spend   : 0; });
+  var leadsMetaArr = allDays.map(function(d){ return wp.byDay[d] ? (wp.byDay[d].pagosMeta   || 0) : 0; });
+  var leadsGoogArr = allDays.map(function(d){ return wp.byDay[d] ? (wp.byDay[d].pagosGoogle || 0) : 0; });
+  var orgArr       = allDays.map(function(d){ return wp.byDay[d] ? wp.byDay[d].org : 0; });
 
-  mkChart('cSpend', {type:'line', data:{labels:labels, datasets:[{data:spendArr, borderColor:YL, backgroundColor:'rgba(212,168,0,.08)', borderWidth:2.5, pointBackgroundColor:YL, pointRadius:5, fill:true, tension:.3}]}, options:{plugins:{legend:{display:false}}, scales:{x:{grid:G}, y:{grid:G, ticks:{callback:function(v){return 'R$'+v.toFixed(0);}}}}}});
-  mkChart('cLeads', {type:'line', data:{labels:labels, datasets:[{data:leadsArr, borderColor:'#d4a800', backgroundColor:'rgba(212,168,0,.1)', borderWidth:2, pointRadius:3, pointBackgroundColor:'#d4a800', fill:true, tension:0.3}]}, options:{plugins:{legend:{display:false}}, scales:{x:{grid:G}, y:{grid:G, beginAtZero:true}}}});
-  mkChart('cCPL',   {type:'line', data:{labels:labels, datasets:[{data:cplArr, borderColor:'#16a34a', backgroundColor:'rgba(22,163,74,.07)', borderWidth:2.5, pointBackgroundColor:'#16a34a', pointRadius:5, fill:true, tension:.3, spanGaps:true}]}, options:{plugins:{legend:{display:false}}, scales:{x:{grid:G}, y:{grid:G, min:0, ticks:{callback:function(v){return 'R$'+v.toFixed(2);}}}}}});
-  mkChart('cPagOrg',{type:'line', data:{labels:labels, datasets:[{label:'Pagos', data:leadsArr, borderColor:'#d4a800', backgroundColor:'rgba(212,168,0,.1)', borderWidth:2, pointRadius:3, pointBackgroundColor:'#d4a800', fill:true, tension:0.3},{label:'Organicos', data:orgArr, borderColor:'#111', backgroundColor:'rgba(17,17,17,.05)', borderWidth:2, pointRadius:3, pointBackgroundColor:'#111', fill:true, tension:0.3}]}, options:{plugins:{legend:{display:true, labels:{color:'#888', boxWidth:12, font:{size:11}}}}, scales:{x:{grid:G}, y:{grid:G, beginAtZero:true}}}});
+  // Filtro Meta x Google dos graficos diarios: 'todos' | 'meta' | 'google'
+  window._canalDia = window._canalDia || 'todos';
+  function serieDia(cv) {
+    var sp, ld;
+    if (cv === 'meta') {
+      sp = spendMetaArr; ld = leadsMetaArr;
+    } else if (cv === 'google') {
+      sp = spendGoogArr; ld = leadsGoogArr;
+    } else {
+      sp = allDays.map(function(d,i){ return spendMetaArr[i] + spendGoogArr[i]; });
+      ld = allDays.map(function(d,i){ return leadsMetaArr[i] + leadsGoogArr[i]; });
+    }
+    var cpl = sp.map(function(s,i){ return ld[i] > 0 ? +(s/ld[i]).toFixed(2) : null; });
+    return {spend:sp, leads:ld, cpl:cpl};
+  }
+
+  function renderGraficosDia() {
+    var cv = window._canalDia;
+    var S  = serieDia(cv);
+    var cor = cv === 'google' ? '#4285f4' : YL;
+    var corBg = cv === 'google' ? 'rgba(66,133,244,.08)' : 'rgba(212,168,0,.08)';
+
+    mkChart('cSpend', {type:'line', data:{labels:labels, datasets:[{data:S.spend, borderColor:cor, backgroundColor:corBg, borderWidth:2.5, pointBackgroundColor:cor, pointRadius:5, fill:true, tension:.3}]}, options:{plugins:{legend:{display:false}, tooltip:{callbacks:{afterBody:function(items){ if (cv!=='todos') return ''; var i=items[0].dataIndex; return 'Meta R$ '+spendMetaArr[i].toFixed(2)+'  ·  Google R$ '+spendGoogArr[i].toFixed(2); }}}}, scales:{x:{grid:G}, y:{grid:G, ticks:{callback:function(v){return 'R$'+v.toFixed(0);}}}}}});
+    mkChart('cLeads', {type:'line', data:{labels:labels, datasets:[{data:S.leads, borderColor:cor, backgroundColor:corBg, borderWidth:2, pointRadius:3, pointBackgroundColor:cor, fill:true, tension:0.3}]}, options:{plugins:{legend:{display:false}, tooltip:{callbacks:{afterBody:function(items){ if (cv!=='todos') return ''; var i=items[0].dataIndex; return 'Meta '+leadsMetaArr[i]+'  ·  Google '+leadsGoogArr[i]; }}}}, scales:{x:{grid:G}, y:{grid:G, beginAtZero:true}}}});
+    mkChart('cCPL',   {type:'line', data:{labels:labels, datasets:[{data:S.cpl, borderColor:'#16a34a', backgroundColor:'rgba(22,163,74,.07)', borderWidth:2.5, pointBackgroundColor:'#16a34a', pointRadius:5, fill:true, tension:.3, spanGaps:true}]}, options:{plugins:{legend:{display:false}}, scales:{x:{grid:G}, y:{grid:G, min:0, ticks:{callback:function(v){return 'R$'+v.toFixed(2);}}}}}});
+    mkChart('cPagOrg',{type:'line', data:{labels:labels, datasets:[{label:'Pagos', data:S.leads, borderColor:cor, backgroundColor:corBg, borderWidth:2, pointRadius:3, pointBackgroundColor:cor, fill:true, tension:0.3},{label:'Organicos', data:orgArr, borderColor:'#111', backgroundColor:'rgba(17,17,17,.05)', borderWidth:2, pointRadius:3, pointBackgroundColor:'#111', fill:true, tension:0.3}]}, options:{plugins:{legend:{display:true, labels:{color:'#888', boxWidth:12, font:{size:11}}}}, scales:{x:{grid:G}, y:{grid:G, beginAtZero:true}}}});
+
+    ['todos','meta','google'].forEach(function(k){
+      var b = document.getElementById('btnCanal-'+k);
+      if (b) b.className = 'canal-btn' + (k === cv ? ' canal-btn-on' : '');
+    });
+    var sub = document.getElementById('canalDiaSub');
+    if (sub) {
+      var tot = S.spend.reduce(function(a,b){return a+b;},0);
+      var tl  = S.leads.reduce(function(a,b){return a+b;},0);
+      sub.textContent = fBRL(tot) + ' · ' + fNum(tl) + ' leads pagos'
+        + (cv === 'todos' ? '' : (cv === 'meta' ? ' (somente Meta)' : ' (somente Google)'));
+    }
+  }
+  window._renderGraficosDia = renderGraficosDia;
+  ['todos','meta','google'].forEach(function(k){
+    var b = document.getElementById('btnCanal-'+k);
+    if (b) b.onclick = function(){ window._canalDia = k; renderGraficosDia(); };
+  });
+  renderGraficosDia();
 
   // Top criativos
   var criEntries = Object.entries(wp.byContent).sort(function(a,b){return b[1]-a[1];}).slice(0,5);
-  mkChart('cTop5', {type:'bar', data:{labels:criEntries.map(function(e){return e[0].replace(/^\d+\s*-\s*(VID\s*-\s*)?/i,'').trim();}), datasets:[{data:criEntries.map(function(e){return e[1];}), backgroundColor:['#d4a800','rgba(212,168,0,.75)','rgba(212,168,0,.5)','rgba(212,168,0,.35)','rgba(212,168,0,.2)'], borderRadius:5, barThickness:22}]}, options:{indexAxis:'y', plugins:{legend:{display:false}}, scales:{x:{grid:G}, y:{grid:{display:false}}}}});
+  mkChart('cTop5', {type:'bar', data:{labels:criEntries.map(function(e){var L=(m.adLabel&&m.adLabel[e[0]])||(wp.contentLabel&&wp.contentLabel[e[0]])||e[0]; return (L.replace(/^\d+\s*-\s*(VID\s*-\s*)?/i,'').trim()||'(sem utm_content)');}), datasets:[{data:criEntries.map(function(e){return e[1];}), backgroundColor:['#d4a800','rgba(212,168,0,.75)','rgba(212,168,0,.5)','rgba(212,168,0,.35)','rgba(212,168,0,.2)'], borderRadius:5, barThickness:22}]}, options:{indexAxis:'y', plugins:{legend:{display:false}}, scales:{x:{grid:G}, y:{grid:{display:false}}}}});
 
-  // Tabela
+  // Tabela \u2014 spend do criativo = Meta + Google (chaves ja normalizadas por adKey)
+  var gByAd = (google && google.googleByAd) ? google.googleByAd : {};
+  function spendDoAd(k) { return (m.metaByAd[k] || 0) + (gByAd[k] || 0); }
+  function nomeDoAd(k) {
+    // prefere o Ad Name do Meta (ja vem sem sufixo de duplicacao) ao utm_content
+    return (m.adLabel && m.adLabel[k]) || (wp.contentLabel && wp.contentLabel[k]) || k;
+  }
   var allCri = Object.entries(wp.byContent).sort(function(a,b){return b[1]-a[1];});
   var minCPL = Infinity;
-  allCri.forEach(function(e){ var c = e[1]>0 ? (m.metaByAd[e[0]]||0)/e[1] : Infinity; if(c<minCPL) minCPL=c; });
+  allCri.forEach(function(e){ var s=spendDoAd(e[0]); var c = (e[1]>0 && s>0) ? s/e[1] : Infinity; if(c<minCPL) minCPL=c; });
   var tRows = allCri.map(function(e){
-    var ad=e[0], leads=e[1], s=m.metaByAd[ad]||0, cplCri=leads>0?s/leads:0;
-    var nome = ad.replace(/^\d+\s*-\s*(VID\s*-\s*)?/i,'').trim();
-    var best = leads>0 && Math.abs(cplCri-minCPL)<0.01;
+    var ad=e[0], leads=e[1], s=spendDoAd(ad), cplCri=leads>0?s/leads:0;
+    var full = nomeDoAd(ad);
+    var nome = full.replace(/^\d+\s*-\s*(VID\s*-\s*)?/i,'').trim() || '(sem utm_content)';
+    var best = leads>0 && s>0 && Math.abs(cplCri-minCPL)<0.01;
     var cls  = cplCri>0&&cplCri<3?'cpl-bom':cplCri>=3&&cplCri<7?'cpl-med':'cpl-ruim';
-    return '<tr class="'+(best?'row-best':'')+'"><td><span class="cri-nome">'+nome+(best?' \uD83C\uDFC6':'')+'</span><span class="cri-full">'+ad+'</span></td><td class="num">'+fBRL(s)+'</td><td class="num centro">'+leads+'</td><td class="num '+cls+'">'+(leads>0?fBRL(cplCri):'-')+'</td></tr>';
+    var mg   = (m.metaByAd[ad]||0) > 0 && (gByAd[ad]||0) > 0
+             ? '<span class="cri-full">Meta '+fBRL(m.metaByAd[ad]||0)+' \u00B7 Google '+fBRL(gByAd[ad]||0)+'</span>' : '';
+    return '<tr class="'+(best?'row-best':'')+'"><td><span class="cri-nome">'+nome+(best?' \uD83C\uDFC6':'')+'</span><span class="cri-full">'+full+'</span>'+mg+'</td><td class="num">'+fBRL(s)+'</td><td class="num centro">'+leads+'</td><td class="num '+cls+'">'+(leads>0&&s>0?fBRL(cplCri):'-')+'</td></tr>';
   }).join('');
   var tbl = document.getElementById('tabelaCriativos');
   if (tbl) tbl.innerHTML = '<thead><tr><th>Criativo</th><th class="num">Valor Gasto</th><th class="num centro">Leads</th><th class="num">CPL</th></tr></thead><tbody>'+tRows+'</tbody>';
@@ -4179,7 +4322,7 @@ function renderDashboard(m, mAll, mp, wp, wpp, pesq, planRows, google, kiwify, m
       var al = mAll.byCamp[camp].leads;
       var cplC = al > 0 ? s / al : 0;
       var cls  = cplC > 0 && cplC < 3 ? 'cpl-bom' : cplC >= 3 && cplC < 7 ? 'cpl-med' : 'cpl-ruim';
-      var nome = camp.replace(/\[CNP\]/gi,'').replace(/\[LEADS?\]/gi,'').replace(/\[LEMBRETE\]/gi,'').replace(/\[AQUECIMENTO\]/gi,'').replace(/\[RMKT\]/gi,'').replace(/\[FLASH\]/gi,'').trim();
+      var nome = camp.replace(/\[CNP\]/gi,'').replace(/\[LEADS?\]/gi,'').replace(/\[LEMBRETE\]/gi,'').replace(/\[AQUECIMENTO\]/gi,'').replace(/\[DIST\]/gi,'').replace(/\[RMKT\]/gi,'').replace(/\[FLASH\]/gi,'').trim();
       return '<tr><td><span class="cri-nome">'+nome+'</span><span class="cri-full">'+camp+'</span></td>'
            + '<td class="num">'+fBRL(s)+'</td>'
            + '<td class="num centro">'+al+'</td>'
@@ -4201,12 +4344,13 @@ function renderDashboard(m, mAll, mp, wp, wpp, pesq, planRows, google, kiwify, m
   function spendParaTerm(terms) {
     var total = 0;
     var adsContados = {}; // evita contar o mesmo ad duas vezes entre terms
+    var gAd = (google && google.googleByAd) ? google.googleByAd : {};
     terms.forEach(function(term) {
       var contents = wp.byTermContent[term] || {};
       Object.keys(contents).forEach(function(adName) {
         if (!adsContados[adName]) {
           adsContados[adName] = true;
-          total += m.metaByAd[adName] || 0;
+          total += (m.metaByAd[adName] || 0) + (gAd[adName] || 0);
         }
       });
     });
@@ -4577,13 +4721,26 @@ function renderPlanejamento(planRows, metaRows, googleRows, d1, d2) {
   // Calcular spend real por tag — cada linha atribuída à primeira tag que bater (sem dupla contagem)
   var spendByTag = {};
 
+  // Sinonimos de tag: as campanhas de distribuicao do CNP3 vem marcadas com
+  // [DIST] e [AQUECIMENTO] juntas no mesmo nome (as duas apontam exatamente as
+  // mesmas linhas). Tratar como a mesma fase evita que, com as duas na aba
+  // Planejamento, o `break` dê toda a verba para a primeira e zere a outra.
+  var TAG_SINONIMOS = { 'AQUECIMENTO': ['AQUECIMENTO','DIST'], 'DIST': ['DIST','AQUECIMENTO'] };
+  function tagCasa(camp, tag) {
+    var alts = TAG_SINONIMOS[tag] || [tag];
+    for (var ai = 0; ai < alts.length; ai++) {
+      if (camp.indexOf('[' + alts[ai] + ']') >= 0) return true;
+    }
+    return false;
+  }
+
   // Meta Ads
   metaRows.forEach(function(r) {
     var camp = (r['Campaign Name'] || '').toUpperCase();
     var s    = numFromRow(r, 'Spend (Cost, Amount Spent)');
     for (var fi = 0; fi < fases.length; fi++) {
       var tag = (fases[fi]['TAG CAMPANHA'] || '').toUpperCase().trim();
-      if (tag && camp.indexOf('[' + tag + ']') >= 0) {
+      if (tag && tagCasa(camp, tag)) {
         if (!spendByTag[tag]) spendByTag[tag] = 0;
         spendByTag[tag] += s;
         break;
@@ -4601,7 +4758,7 @@ function renderPlanejamento(planRows, metaRows, googleRows, d1, d2) {
       if (!s) s = numFromRow(r, 'Cost');
       for (var fi = 0; fi < fases.length; fi++) {
         var tag = (fases[fi]['TAG CAMPANHA'] || '').toUpperCase().trim();
-        if (tag && camp.indexOf('[' + tag + ']') >= 0) {
+        if (tag && tagCasa(camp, tag)) {
           if (!spendByTag[tag]) spendByTag[tag] = 0;
           spendByTag[tag] += s;
           break;
@@ -5364,10 +5521,15 @@ function renderPesqAlunos(data) {
 
 // ── INSIGHTS ──────────────────────────────────────────────────────────────────
 function renderInsights(m, wp, pesq, cpl, ctr, rLPV, rLead, cplFrio, cplQuente, bestCPL, bestAd, bestLeads, bestSpend) {
+  var gAdIns = (window._lastGByAd) || {};
+  function spIns(k){ return (m.metaByAd[k] || 0) + (gAdIns[k] || 0); }
+  function lblIns(k){ return (m.adLabel && m.adLabel[k]) || (wp.contentLabel && wp.contentLabel[k]) || k; }
   var entries = Object.entries(wp.byContent).map(function(e){
-    return {ad:e[0], leads:e[1], cpl:e[1]>0?(m.metaByAd[e[0]]||0)/e[1]:Infinity};
+    var s = spIns(e[0]);
+    // criativo sem investimento nao tem CPL — nao pode ser eleito "pior CPL"
+    return {ad:e[0], leads:e[1], spend:s, cpl:(e[1]>0 && s>0)?s/e[1]:-1};
   });
-  var worst = entries.sort(function(a,b){return b.cpl-a.cpl;})[0];
+  var worst = entries.filter(function(x){ return x.cpl > 0; }).sort(function(a,b){return b.cpl-a.cpl;})[0];
   var reels  = wp.byTerm['Instagram_Reels']  || 0;
   var stories= wp.byTerm['Instagram_Stories']|| 0;
   var leadsP = wp.pagos;
@@ -5376,8 +5538,8 @@ function renderInsights(m, wp, pesq, cpl, ctr, rLPV, rLead, cplFrio, cplQuente, 
     {type:'alert',   icon:'⚠️', title:'Gargalo: CTR de '+ctr.toFixed(2)+'% - hooks mais fortes nos 3 primeiros segundos', text:'A cada 1.000 impressoes, apenas '+(ctr*10).toFixed(0)+' pessoas clicam. Elevar o CTR para 4-5% reduz o custo por lead sem aumentar o investimento.'},
     {type:'alert',   icon:'📉', title:(100-rLPV).toFixed(0)+'% dos cliques nao chegam a LP - verificar velocidade e URL', text:'Apenas '+rLPV.toFixed(0)+'% dos cliques viraram LPV. Checar PageSpeed Insights e garantir URL de destino direta.'},
     {type:'positive',icon:'✅', title:'LP converte '+rLead.toFixed(0)+'% dos visitantes - acima da media (10-20%)', text:'Quem chega a pagina converte bem. Nao alterar a LP. Foco em levar mais trafego qualificado.'},
-    worst && worst.cpl > cpl*3 ? {type:'alert',icon:'🚨',title:'Criativo "'+worst.ad.replace(/^\d+\s*-\s*(VID\s*-\s*)?/i,'').trim()+'" com CPL '+(worst.cpl/cpl).toFixed(0)+'x acima da media', text:fBRL(m.metaByAd[worst.ad]||0)+' gastos para '+worst.leads+' leads (CPL '+fBRL(worst.cpl)+'). Realocar budget para criativos de menor CPL.'} : null,
-    {type:'positive',icon:'🏆',title:'Criativo "'+bestAd.replace(/^\d+\s*-\s*(VID\s*-\s*)?/i,'').trim()+'" com '+fBRL(bestCPL)+'/lead - escalar', text:'Melhor CPL com '+bestLeads+' leads. Criar variacoes e aumentar budget alocado.'},
+    worst && worst.cpl > cpl*3 ? {type:'alert',icon:'🚨',title:'Criativo "'+lblIns(worst.ad).replace(/^\d+\s*-\s*(VID\s*-\s*)?/i,'').trim()+'" com CPL '+(worst.cpl/cpl).toFixed(0)+'x acima da media', text:fBRL(worst.spend)+' gastos para '+worst.leads+' leads (CPL '+fBRL(worst.cpl)+'). Realocar budget para criativos de menor CPL.'} : null,
+    {type:'positive',icon:'🏆',title:'Criativo "'+lblIns(bestAd).replace(/^\d+\s*-\s*(VID\s*-\s*)?/i,'').trim()+'" com '+fBRL(bestCPL)+'/lead - escalar', text:'Melhor CPL com '+bestLeads+' leads. Criar variacoes e aumentar budget alocado.'},
     {type:'neutral', icon:'🎯',title:'Quente '+(cplFrio>cplQuente?((cplFrio-cplQuente)/cplQuente*100).toFixed(0)+'% mais barato que Frio':'e Frio com CPL similar'), text:'CPL Quente ('+fBRL(cplQuente)+') vs Frio ('+fBRL(cplFrio)+'). Manter os dois: Quente para eficiencia, Frio para escala.'},
     {type:'positive',icon:'📱',title:'Reels lidera com '+(leadsP>0?(reels/leadsP*100).toFixed(0):0)+'% dos leads - formato dominante', text:'Reels+Stories somam '+(leadsP>0?((reels+stories)/leadsP*100).toFixed(0):0)+'%. Produzir mais videos 9:16, 15-30s.'},
     {type:'positive',icon:'💰',title:'CPL de '+fBRL(cpl)+' extremamente competitivo para o nicho', text:'Nichos tecnicos B2B costumam ter CPL entre R$ 8-25. Momento ideal para escalar.'}
