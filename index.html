@@ -4726,6 +4726,10 @@ function renderPlanejamento(planRows, metaRows, googleRows, d1, d2) {
   // mesmas linhas). Tratar como a mesma fase evita que, com as duas na aba
   // Planejamento, o `break` dê toda a verba para a primeira e zere a outra.
   var TAG_SINONIMOS = { 'AQUECIMENTO': ['AQUECIMENTO','DIST'], 'DIST': ['DIST','AQUECIMENTO'] };
+  // Nome e tags exibidos quando a fase cobre sinonimos (a planilha traz so uma).
+  // Ordem fixa aqui para o rotulo nao mudar conforme a tag escolhida na planilha.
+  var FASE_NOME_EXIB = { 'AQUECIMENTO': 'Aquecimento/Distribuição', 'DIST': 'Aquecimento/Distribuição' };
+  var FASE_TAG_EXIB  = { 'AQUECIMENTO': '[AQUECIMENTO]/[DIST]',     'DIST': '[AQUECIMENTO]/[DIST]' };
   function tagCasa(camp, tag) {
     var alts = TAG_SINONIMOS[tag] || [tag];
     for (var ai = 0; ai < alts.length; ai++) {
@@ -4786,7 +4790,13 @@ function renderPlanejamento(planRows, metaRows, googleRows, d1, d2) {
     var spend = spendByTag[tag] || 0;
     var pct  = meta > 0 ? spend / meta * 100 : 0;
     var icon = FASE_SVG[tag] || FASE_SVG[nome.toUpperCase()] || DEFAULT_SVG;
-    return { nome:nome, tag:tag, meta:meta, spend:spend, pct:pct, icon:icon };
+    // Rotulo de exibicao: quando a fase tem tags sinonimas (ex.: as campanhas
+    // de distribuicao vem com [AQUECIMENTO] e [DIST] no mesmo nome), mostra as
+    // duas na tabela — o valor ja e o mesmo, muda so o rotulo.
+    var nomeExib = FASE_NOME_EXIB[tag] || nome;
+    var tagExib  = FASE_TAG_EXIB[tag] || ('[' + tag + ']');
+    return { nome:nome, nomeExib:nomeExib, tag:tag, tagExib:tagExib,
+             meta:meta, spend:spend, pct:pct, icon:icon };
   });
 
   // ── Custos fixos: linhas que não vêm de nenhuma planilha de mídia ───────────
@@ -4795,7 +4805,9 @@ function renderPlanejamento(planRows, metaRows, googleRows, d1, d2) {
   custosFixos().forEach(function(c) {
     dadosFases.push({
       nome:  c.nome,
+      nomeExib: c.nome,
       tag:   c.tag,
+      tagExib: '[' + c.tag + ']',
       meta:  c.valor,
       spend: c.valor,
       pct:   100,
@@ -4925,7 +4937,7 @@ function renderPlanejamento(planRows, metaRows, googleRows, d1, d2) {
       var barHtml = '<div style="background:var(--border);border-radius:3px;height:6px;width:120px;display:inline-block;vertical-align:middle;margin-right:8px">'
                   + '<div style="width:'+barW+'%;height:6px;border-radius:3px;background:'+barCol+'"></div></div>';
       return '<tr>'
-           + '<td><div style="display:flex;align-items:center;gap:10px"><div style="color:var(--black);flex-shrink:0">'+f.icon+'</div><div><strong>'+f.nome+'</strong><span class="cri-full">TAG: ['+f.tag+']</span></div></div></td>'
+           + '<td><div style="display:flex;align-items:center;gap:10px"><div style="color:var(--black);flex-shrink:0">'+f.icon+'</div><div><strong>'+(f.nomeExib||f.nome)+'</strong><span class="cri-full">TAG: '+(f.tagExib||('['+f.tag+']'))+'</span></div></div></td>'
            + '<td class="num">'+fBRL(f.meta)+'</td>'
            + '<td class="num">'+fBRL(f.spend)+'</td>'
            + '<td class="num '+cls+'">'+barHtml+'<strong>'+pctStr+'</strong></td>'
