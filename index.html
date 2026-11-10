@@ -688,10 +688,9 @@ input[type=date]{background:transparent;border:none;color:#ccc;font-family:'DM S
         <canvas id="kvFatDonut" width="52" height="52" style="position:absolute;top:36px;right:12px"></canvas>
       </div>
       <div class="bn" style="position:relative">
-        <div class="bn-info">ⓘ<span class="bn-tooltip">ROAS = Receita bruta ÷ Investimento em mídia (Meta [CNP] + Google Ads).<br>Receita inclui produtos principais e order bumps.<br>Roda mostra % atingido da meta de ROAS.</span></div>
+        <div class="bn-info">ⓘ<span class="bn-tooltip">ROAS = Receita bruta ÷ Investimento em mídia (Meta [CNP] + Google Ads).<br>Receita inclui produtos principais e order bumps.</span></div>
         <div class="bn-lbl">ROAS</div>
         <div class="bn-val" id="kvRoas" style="font-size:44px">-</div>
-        <canvas id="kvRoasDonut" width="52" height="52" style="position:absolute;top:36px;right:12px"></canvas>
       </div>
     </div>
     <div class="grid-vendas-bot" style="grid-template-columns:repeat(5,1fr)">
@@ -3089,8 +3088,9 @@ function processMetas(rows) {
     // caía no fallback r['D'], que não existe no CSV do worker, e vinha 0.
     conv:      numMeta(r['Conversão'] || r['Conversao'] || r['D'] || 0),
     rmkt:      numMeta(r['Investimento RMKT'] || r['G'] || 0),
-    roas:      numMeta(r['ROAS']         || r['H'] || 0),
-    cac:       numMeta(r['CAC']          || r['I'] || 0),
+    // ROAS e CAC da planilha não são lidos: estão calculados sobre o
+    // investimento de RMKT, e o dashboard mede o realizado sobre a mídia
+    // inteira. Comparar os dois dava um gauge sempre em 0%.
   };
 }
 
@@ -3670,9 +3670,11 @@ function renderVendas(kiwify, metas, wp, rmktSpendDireto, totalAdsDireto, abando
   setEl('kvConvSub', k.vendas + ' vendas / ' + leadsTotal.toLocaleString('pt-BR') + ' leads');
 
   // ── Donuts de meta (preenchimento = % atingido da meta do lançamento) ─────
+  // ROAS e CAC não têm meta no dashboard: as da planilha são calculadas sobre o
+  // investimento de RMKT, enquanto o realizado usa a mídia inteira — denominadores
+  // diferentes tornavam a comparação (e o donut) sem sentido.
   if (metas.vendas > 0) mkDonutMeta('kvVendasDonut', k.vendas, metas.vendas, '#d4a800');
   if (metas.fat    > 0) mkDonutMeta('kvFatDonut',    fatBruto, metas.fat,    '#16a34a');
-  if (metas.roas   > 0) mkDonutMeta('kvRoasDonut',   roas,     metas.roas,   '#3b82f6');
 
   // ── Investido em Mídia ────────────────────────────────────────────────────
   // O card mostra o denominador do ROAS/CAC (mídia total), não só [RMKT].
@@ -4319,7 +4321,7 @@ function renderVendas(kiwify, metas, wp, rmktSpendDireto, totalAdsDireto, abando
 // ── RENDER ────────────────────────────────────────────────────────────────────
 function renderDashboard(m, mAll, mp, wp, wpp, pesq, planRows, google, kiwify, metas) {
   kiwify = kiwify || {vendas:0,fat:0,reembolsos:0,fatReemb:0,aguardando:0,byDia:{},bySemDia:{},byHora:{},byProduto:{},byUTMSource:{},byUTMTerm:{},byUTMContent:{},byUTMMedium:{},byVendedor:{larissa:0,marcela:0,kamilly:0,ray:0,paula:0},byPagamento:{},emailsSet:{},telefonesSet:{}};
-  metas  = metas  || {vendas:0,fat:0,leads:0,conv:0,rmkt:0,roas:0,cac:0};
+  metas  = metas  || {vendas:0,fat:0,leads:0,conv:0,rmkt:0};
   window._lastRenderArgs = [m, mAll, mp, wp, wpp, pesq, planRows, google];
   // expoe os mapas de spend por criativo (chave adKey) para as tabelas de vendas
   // e os insights. _lastMByAd nunca era preenchido: o ROAS por criativo ficava '-'.
