@@ -616,8 +616,56 @@ input[type=date]{background:transparent;border:none;color:#ccc;font-family:'DM S
 
     <div id="vendasDiagBanner" style="display:none;background:#fff4e5;border:1px solid #f0b429;border-radius:8px;padding:14px 18px;margin-bottom:16px;font-size:13px;line-height:1.6;color:#7a4a00"></div>
 
+    <!-- ── SECAO 0: TODOS OS PRODUTOS ───────────────────────────────────── -->
+    <!-- Espelha a visão da Kiwify: principal + order bumps somados, com filtro
+         por produto. As seções seguintes continuam restritas ao principal. -->
+    <div class="section-label">Todos os produtos — Visão Consolidada</div>
+    <div style="background:var(--card,#fff);border:1px solid rgba(0,0,0,.08);border-radius:12px;padding:18px;margin-bottom:22px">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+        <label for="selProdutoGeral" style="font-size:12px;font-weight:600;color:var(--muted)">Produto</label>
+        <select id="selProdutoGeral" style="padding:8px 12px;border:1px solid rgba(0,0,0,.15);border-radius:8px;font-size:13px;font-weight:600;background:#fff;min-width:240px">
+          <option value="__ALL__">Todos os produtos</option>
+        </select>
+        <span id="selProdutoGeralHint" style="font-size:11px;color:var(--muted)"></span>
+      </div>
+      <div class="grid-vendas-top">
+        <div class="bn" style="position:relative">
+          <div class="bn-info">ⓘ<span class="bn-tooltip">Vendas pagas (order_ref único) do produto selecionado.<br>"Todos os produtos" soma o principal e os order bumps — é o número comparável ao painel da Kiwify.<br>Estornos removidos.</span></div>
+          <div class="bn-lbl">Vendas Confirmadas</div>
+          <div class="bn-val" id="pgVendas" style="font-size:44px">-</div>
+          <div class="bn-sub" id="pgVendasSub">-</div>
+        </div>
+        <div class="bn" style="position:relative">
+          <div class="bn-info">ⓘ<span class="bn-tooltip">Faturamento líquido das vendas confirmadas do produto selecionado.</span></div>
+          <div class="bn-lbl">Faturamento</div>
+          <div class="bn-val" id="pgFat" style="font-size:36px">-</div>
+          <div class="bn-sub" id="pgFatSub">-</div>
+        </div>
+        <div class="bn" style="position:relative">
+          <div class="bn-info">ⓘ<span class="bn-tooltip">Ticket médio = faturamento ÷ vendas confirmadas do produto selecionado.</span></div>
+          <div class="bn-lbl">Ticket Médio</div>
+          <div class="bn-val" id="pgTicket" style="font-size:36px">-</div>
+          <div class="bn-sub" id="pgTicketSub">-</div>
+        </div>
+      </div>
+      <div style="overflow-x:auto;margin-top:16px">
+        <table id="tblProdutosGeral" style="width:100%;border-collapse:collapse;font-size:13px;min-width:460px">
+          <thead>
+            <tr style="text-align:left;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.5px">
+              <th style="padding:8px 10px">Produto</th>
+              <th style="padding:8px 10px">Tipo</th>
+              <th style="padding:8px 10px;text-align:right">Vendas</th>
+              <th style="padding:8px 10px;text-align:right">Faturamento</th>
+              <th style="padding:8px 10px;text-align:right">Ticket</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyProdutosGeral"></tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- ── SECAO 1: BIG NUMBERS ─────────────────────────────────────────── -->
-    <div class="section-label">Cromador Pro 2.0 — Visão Geral de Vendas</div>
+    <div class="section-label">Produto principal: Cromador Pro 2.0 — Visão Geral de Vendas</div>
     <div class="grid-vendas-top">
       <div class="bn" style="position:relative">
         <div class="bn-info">ⓘ<span class="bn-tooltip">Vendas confirmadas = pedidos únicos (order_ref) com status paid no período.<br>Aguardando pagamento e recusados não contam.<br>Pedido estornado é removido da contagem.<br>Hoje vs ontem = comparativo do dia atual.<br>% meta = progresso em relação à meta do lançamento.</span></div>
@@ -1123,7 +1171,7 @@ input[type=date]{background:transparent;border:none;color:#ccc;font-family:'DM S
     <div style="background:linear-gradient(135deg,#111 0%,#2a1a00 100%);border-radius:14px;padding:26px 32px;margin-bottom:20px">
       <div style="font-size:10px;font-weight:700;letter-spacing:2px;color:var(--yellow);text-transform:uppercase;margin-bottom:5px">Mundial Cromo &middot; Meta Ads</div>
       <div style="font-size:24px;font-weight:800;color:#fff">Distribuicao &mdash; Seguidores e Video</div>
-      <div style="font-size:12px;color:rgba(255,255,255,.45);margin-top:3px">Periodo consolidado 01/04/2026 a 31/08/2026 &middot; cobre CNP1 e CNP2</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.45);margin-top:3px">Seguidores: 14/04/2026 a 08/11/2026 &middot; Video: 01/04/2026 a 31/08/2026 &mdash; periodos diferentes, nao comparar</div>
     </div>
 
     <!-- BIG NUMBERS -->
@@ -1147,6 +1195,20 @@ input[type=date]{background:transparent;border:none;color:#ccc;font-family:'DM S
         que conta replays e pode passar de 100%. Use-o para comparar criativos entre si, nao como "% de pessoas que pararam".
         <strong style="color:var(--text)">Seguidores</strong> vem do export do Gerenciador de Anuncios (colunas "Seguidores no Instagram" e
         "Custo por seguidor"): o conector Stract nao expoe essa metrica.
+      </div>
+    </div>
+
+    <!-- AVISO: PERIODOS DIFERENTES -->
+    <div class="card" style="padding:14px 18px;margin-bottom:22px;border-left:3px solid #ef4444">
+      <div style="font-size:11px;line-height:1.7;color:var(--muted)">
+        <strong style="color:#ef4444">Atencao: os dois blocos cobrem periodos diferentes.</strong>
+        Os numeros de <strong style="color:var(--text)">seguidores</strong> (cards "Seguidores ganhos" e "Custo por seguidor",
+        grafico por fase e tabela de campanhas) sao do recorte <strong>14/04/2026 a 08/11/2026</strong> &mdash; campanhas
+        <code>[T5]</code> / <code>[CNP26]</code>.
+        Os de <strong style="color:var(--text)">video</strong> (hook rate, hold rate, funil e tabela de criativos) seguem no recorte
+        antigo <strong>01/04/2026 a 31/08/2026</strong> &mdash; campanhas <code>[T3]</code> / <code>[T4]</code>, CNP1 e CNP2.
+        Motivo: o export de seguidores do Gerenciador nao traz nenhuma coluna de video, entao a metade de video nao pode ser
+        atualizada junto. <strong>Nao dividir um pelo outro nem ler como o mesmo periodo.</strong>
       </div>
     </div>
 
@@ -1948,32 +2010,36 @@ function dbRenderCriativos(){
 // insights.results -- todos retornam 0 ou outra metrica, enquanto na mesma
 // consulta page_engagement e instagram_profile_visits trazem dados reais.
 var DS = {
-  periodo: '01/04/2026 a 31/08/2026',
-  tot:  { seg: 23364, spend: 157577.27 },
+  // ATENCAO: `tot`, `fase` e `camp` (seguidores) foram atualizados em 08/11/2026
+  // para o recorte 14/04/2026 a 08/11/2026. Os blocos `vid`, `funil` e `video`
+  // seguem no recorte antigo (01/04 a 31/08/2026) porque o export de seguidores
+  // do Gerenciador nao traz nenhuma coluna de video. Nao comparar os dois.
+  periodo: '14/04/2026 a 08/11/2026',
+  periodoVideo: '01/04/2026 a 31/08/2026',
+  tot:  { seg: 13032, spend: 81470.56 },
   vid:  { imp: 33813380, plays: 30621955, thru: 7786088 },
   // Funil: so criativos de video (video_plays > 0). Imagens entram em `vid`
   // mas nao aqui, senao o "% que parou" sai diluido por quem nem tem video.
   funil:{ imp: 31151737, plays: 30621955, thru: 7786088, spend: 145946.73 },
+  // Sem VENDAS/RMKT: nao houve campanha dessas fases com seguidores neste recorte.
   fase: [
-    {fase:'LEADS',    seg:11949, gasto:89508.09, cps:7.49},
-    {fase:'DIST',     seg:10107, gasto:36891.98, cps:3.65},
-    {fase:'VENDAS',   seg:887,   gasto:9358.11,  cps:10.55},
-    {fase:'LEMBRETE', seg:212,   gasto:10904.91, cps:51.44},
-    {fase:'RMKT',     seg:209,   gasto:10914.18, cps:52.22}
+    {fase:'DIST',     seg:7464,  gasto:17313.97, cps:2.32},
+    {fase:'LEADS',    seg:5507,  gasto:62192.93, cps:11.29},
+    {fase:'LEMBRETE', seg:61,    gasto:1963.66,  cps:32.19}
   ],
   camp: [
-    {c:'[DIST] Post IG: Banho de Cromo. Curso 100%...',      seg:5882, g:5012.92,  cps:0.85},
-    {c:'[LEADS] [SITE] [T4] [FRIO] - Principal',             seg:2327, g:7098.00,  cps:3.05},
-    {c:'[LEADS] [SITE] [T4] [QUENTE] - Principal',           seg:2180, g:18620.83, cps:8.54},
-    {c:'[DIST] Post IG: Quer aprender o processo? Siga...',  seg:1831, g:2765.80,  cps:1.51},
-    {c:'[DIST] Post IG: Curso de Cromagem. Siga...',         seg:1593, g:4481.31,  cps:2.81},
-    {c:'[LEADS] [SITE] [T4] [QUENTE] - Envolvimento 365D',   seg:1491, g:3958.93,  cps:2.66},
-    {c:'[LEADS] [SITE] [T4] [FRIO] [ABO] - Teste criativos', seg:1391, g:6534.74,  cps:4.70},
-    {c:'[LEADS] [SITE] [T3] [QUENTE] - Principal envolv.',   seg:1032, g:3986.35,  cps:3.86},
-    {c:'[LEADS] [SITE] [T4] [QUENTE] - Envolvimento 180D',   seg:947,  g:3989.54,  cps:4.21},
-    {c:'[LEADS] [SITE] [T4] [QUENTE] [ABO] - Teste criativos',seg:610, g:7315.90,  cps:11.99},
-    {c:'[VENDAS] [WPP] [GP] [QUENTE] - Principal',           seg:476,  g:2418.25,  cps:5.08},
-    {c:'[LEADS] [FORMS] [QUENTE] - Teste de formulario',     seg:402,  g:3706.15,  cps:9.22}
+    {c:'[DIST] Post IG: Monte seu proprio negocio (b)',      seg:1819, g:1199.50,  cps:0.66},
+    {c:'[LEADS] [SITE] [T5] [QUENTE] - Envolv. 180D criat.3',seg:1709, g:13564.68, cps:7.94},
+    {c:'[DIST] Post IG: Monte seu proprio negocio (a)',      seg:1691, g:1199.92,  cps:0.71},
+    {c:'[DIST] Post IG: Comente "eu quero"...',              seg:1026, g:1202.55,  cps:1.17},
+    {c:'[LEADS] [SITE] [T5] [FRIO] - Principal',             seg:992,  g:7469.50,  cps:7.53},
+    {c:'[DIST] Post IG: Nova turma do curso de...',          seg:973,  g:1197.30,  cps:1.23},
+    {c:'[DIST] Post IG: Qualidade e garantia!',              seg:835,  g:1199.49,  cps:1.44},
+    {c:'[LEADS] [SITE] [T5] [FRIO] [ABO] - Teste criativos', seg:762,  g:13118.85, cps:17.22},
+    {c:'[LEADS] [SITE] [T5] [QUENTE] - Envolvimento 365D',   seg:706,  g:9784.06,  cps:13.86},
+    {c:'[DIST] Post IG: Comenta "eu quero" que te...',       seg:672,  g:1199.30,  cps:1.78},
+    {c:'[LEADS] [SITE] [T5] [QUENTE] - Envolv. 180D princ.', seg:655,  g:9738.91,  cps:14.87},
+    {c:'[LEADS] [SITE] [T5] [FRIO] [ABO] - Teste de pagina', seg:411,  g:3011.47,  cps:7.33}
   ],
   video: [
     {c:'009 - VID - Um caldeirao magico V2',         s:10966.72, i:1978748, hk:100.07, hd:19.15, ct:0.0289},
@@ -2358,13 +2424,15 @@ const BUMP_LABEL = {
   'Calculadora de Prestação de Serviço':  'Calculadora',
   'Pintura Eletrostática na Prática 1.0': 'Pintura Eletrostática',
   'Galvanizador Pro':                     'Galvanizador Pro',
-  'Galvanizador Pro -1.0':                'Galvanizador Pro 1.0'
+  'Galvanizador Pro -1.0':                'Galvanizador Pro 1.0',
+  'Galvanizador Pro - 1.0':               'Galvanizador Pro 1.0'
 };
 const BUMP_COR = {
   'Calculadora de Prestação de Serviço':  '#8b5cf6',
   'Pintura Eletrostática na Prática 1.0': '#16a34a',
   'Galvanizador Pro':                     '#ef4444',
-  'Galvanizador Pro -1.0':                '#3b82f6'
+  'Galvanizador Pro -1.0':                '#3b82f6',
+  'Galvanizador Pro - 1.0':               '#3b82f6'
 };
 // Soma um mapa produto→número sobre TODOS os order bumps. Substitui os acessos
 // por nome literal, que erravam a grafia ('Galvanizado Pro -1.0' sem o "r",
@@ -2379,11 +2447,16 @@ function somaBumps(mapa) {
 // Order bumps: produtos vendidos junto, com order_ref próprio.
 // Comparação normalizada (normStr) para tolerar acento/caixa/espaço da planilha.
 // Classificação conferida contra o export da Kiwify de 10-11/08/2026.
+// 'Galvanizador Pro - 1.0' (espaço nos dois lados do hífen) é a grafia do export
+// oficial da Kiwify e convive na planilha com 'Galvanizador Pro -1.0'. normStr()
+// colapsa espaços repetidos mas não remove o espaço depois do hífen, então as
+// duas formas são chaves diferentes e ambas precisam estar listadas.
 const ORDER_BUMPS     = [
   'Calculadora de Prestação de Serviço',
   'Pintura Eletrostática na Prática 1.0',
   'Galvanizador Pro',
-  'Galvanizador Pro -1.0'
+  'Galvanizador Pro -1.0',
+  'Galvanizador Pro - 1.0'
 ];
 const TODOS_PRODUTOS  = PRODUTOS_PRINCIPAIS.concat(ORDER_BUMPS);
 
@@ -3399,6 +3472,92 @@ function renderVendasDiagBanner(k) {
   }
 }
 
+// ── Seção 0: todos os produtos, com filtro ──────────────────────────────────
+// Espelha o painel da Kiwify: "Todos os produtos" = principal + order bumps.
+// As demais seções do dashboard seguem restritas ao produto principal, por isso
+// o total daqui é propositalmente maior que o de "Vendas Confirmadas" abaixo.
+var _pgDados = null;   // [{nome, tipo, vendas, fat}]
+var _pgLigado = false; // guarda para registrar o onchange uma única vez
+
+function renderProdutosGeral(k) {
+  if (!k) return;
+  var vProd = k.bumpVendasProd || {}, fProd = k.bumpFatProd || {};
+  var linhas = [{ nome: PRODUTO_EXATO, tipo: 'Principal', vendas: k.vendas || 0, fat: k.fat || 0 }];
+
+  // Agrupa pelo rótulo curto: as duas grafias do Galvanizador viram uma linha só.
+  var porRotulo = {};
+  ORDER_BUMPS.forEach(function(p) {
+    var v = vProd[p] || 0, f = fProd[p] || 0;
+    if (!v && !f) return;
+    var r = BUMP_LABEL[p] || p;
+    if (!porRotulo[r]) porRotulo[r] = { nome: r, tipo: 'Order bump', vendas: 0, fat: 0 };
+    porRotulo[r].vendas += v;
+    porRotulo[r].fat    += f;
+  });
+  Object.keys(porRotulo).forEach(function(r) { linhas.push(porRotulo[r]); });
+  _pgDados = linhas;
+
+  var sel = document.getElementById('selProdutoGeral');
+  if (sel) {
+    var atual = sel.value || '__ALL__';
+    sel.innerHTML = '<option value="__ALL__">Todos os produtos</option>';
+    linhas.forEach(function(l) {
+      var o = document.createElement('option');
+      o.value = l.nome;
+      o.textContent = l.nome;
+      sel.appendChild(o);
+    });
+    // Preserva a escolha do usuário entre refreshes; cai para "Todos" se o
+    // produto selecionado sumiu da base.
+    sel.value = linhas.some(function(l){ return l.nome === atual; }) ? atual : '__ALL__';
+    if (!_pgLigado) { sel.addEventListener('change', aplicaProdutoGeral); _pgLigado = true; }
+  }
+
+  var tb = document.getElementById('tbodyProdutosGeral');
+  if (tb) {
+    tb.innerHTML = linhas.slice().sort(function(a, b){ return b.vendas - a.vendas; }).map(function(l) {
+      var tk = l.vendas > 0 ? fBRL(l.fat / l.vendas) : '-';
+      var cor = l.tipo === 'Principal' ? '#d4a800' : (BUMP_COR[l.nome] || '#64748b');
+      return '<tr style="border-top:1px solid rgba(0,0,0,.06)">' +
+        '<td style="padding:9px 10px;font-weight:600"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + cor + ';margin-right:8px"></span>' + l.nome + '</td>' +
+        '<td style="padding:9px 10px;color:var(--muted);font-size:11px">' + l.tipo + '</td>' +
+        '<td style="padding:9px 10px;text-align:right;font-weight:700">' + l.vendas.toLocaleString('pt-BR') + '</td>' +
+        '<td style="padding:9px 10px;text-align:right">' + fBRL(l.fat) + '</td>' +
+        '<td style="padding:9px 10px;text-align:right;color:var(--muted)">' + tk + '</td>' +
+      '</tr>';
+    }).join('');
+  }
+  aplicaProdutoGeral();
+}
+
+function aplicaProdutoGeral() {
+  if (!_pgDados) return;
+  var sel = document.getElementById('selProdutoGeral');
+  var alvo = sel ? sel.value : '__ALL__';
+  var itens = (alvo === '__ALL__') ? _pgDados : _pgDados.filter(function(l){ return l.nome === alvo; });
+
+  var vendas = 0, fat = 0;
+  itens.forEach(function(l){ vendas += l.vendas; fat += l.fat; });
+
+  setEl('pgVendas', vendas.toLocaleString('pt-BR'));
+  setEl('pgFat',    fBRL(fat));
+  setEl('pgTicket', vendas > 0 ? fBRL(fat / vendas) : '-');
+
+  if (alvo === '__ALL__') {
+    var prin = _pgDados[0] ? _pgDados[0].vendas : 0;
+    setEl('pgVendasSub', prin.toLocaleString('pt-BR') + ' principal + ' + (vendas - prin).toLocaleString('pt-BR') + ' order bumps');
+    setEl('pgFatSub',    itens.length + ' produtos somados');
+    setEl('pgTicketSub', 'média de todos os produtos');
+    setEl('selProdutoGeralHint', 'Soma principal + order bumps — comparável ao painel da Kiwify.');
+  } else {
+    var t = itens[0] ? itens[0].tipo : '';
+    setEl('pgVendasSub', t);
+    setEl('pgFatSub',    'somente ' + alvo);
+    setEl('pgTicketSub', 'ticket do produto');
+    setEl('selProdutoGeralHint', 'Recorte de um produto. As seções abaixo seguem no principal.');
+  }
+}
+
 function renderVendas(kiwify, metas, wp, rmktSpendDireto, totalAdsDireto, abandonoRows) {
   var k = kiwify;
   renderVendasDiagBanner(k);
@@ -3881,6 +4040,9 @@ function renderVendas(kiwify, metas, wp, rmktSpendDireto, totalAdsDireto, abando
   var vends = ['Larissa','Marcela','Kamilly','Ray','Paula'];
   var vendVals = [k.byVendedor.larissa, k.byVendedor.marcela, k.byVendedor.kamilly, k.byVendedor.ray, k.byVendedor.paula||0];
   mkChart('kvChartVendedores', {type:'bar', data:{labels:vends, datasets:[{data:vendVals, backgroundColor:['#d4a800','#16a34a','#3b82f6','#e1306c','#8b5cf6'], borderRadius:8}]}, options:{plugins:{legend:{display:false}}, scales:{x:{grid:{display:false}}, y:{grid:G, beginAtZero:true}}}});
+
+  // Seção 0: consolidado por produto, com filtro.
+  renderProdutosGeral(k);
 
   // ── ANALISE GERAL ──────────────────────────────────────────────────────────
   // Totais consolidados (principal + bumps)
