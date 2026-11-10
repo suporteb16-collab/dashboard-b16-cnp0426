@@ -3065,16 +3065,32 @@ function processKiwify(rows, d1, d2) {
   };
 }
 
+// A aba "Metas Vendas" escreve inteiros com ponto de milhar e SEM decimal
+// ('1.423' vendas, '30.000' leads). numKiwify() trata ponto sozinho como
+// separador decimal — regra correta para os valores monetários da Kiwify —
+// e devolvia 1.423 e 30.0, estourando o % da meta (524/1.423 = 36823%).
+// Aqui o ponto é sempre milhar: só existe decimal quando há vírgula.
+function numMeta(v) {
+  if (!v) return 0;
+  var s = String(v).trim().replace(/[^0-9,.-]/g, '');
+  if (!s) return 0;
+  if (s.indexOf(',') >= 0) s = s.replace(/\./g, '').replace(',', '.'); // 1.254,5 → 1254.5
+  else                     s = s.replace(/\./g, '');                   // 1.423   → 1423
+  return parseFloat(s) || 0;
+}
+
 function processMetas(rows) {
   var r = rows[1] || rows[0] || {};
   return {
-    vendas:    numKiwify(r['Vendas']       || r['A'] || 0),
-    fat:       numKiwify(r['Faturamento']  || r['B'] || 0),
-    leads:     numKiwify(r['Leads Totais'] || r['C'] || 0),
-    conv:      numKiwify(r['Conversao']    || r['D'] || 0),
-    rmkt:      numKiwify(r['Investimento RMKT'] || r['G'] || 0),
-    roas:      numKiwify(r['ROAS']         || r['H'] || 0),
-    cac:       numKiwify(r['CAC']          || r['I'] || 0),
+    vendas:    numMeta(r['Vendas']       || r['A'] || 0),
+    fat:       numMeta(r['Faturamento']  || r['B'] || 0),
+    leads:     numMeta(r['Leads Totais'] || r['C'] || 0),
+    // A planilha grava o cabeçalho com acento ('Conversão'); sem ele a meta
+    // caía no fallback r['D'], que não existe no CSV do worker, e vinha 0.
+    conv:      numMeta(r['Conversão'] || r['Conversao'] || r['D'] || 0),
+    rmkt:      numMeta(r['Investimento RMKT'] || r['G'] || 0),
+    roas:      numMeta(r['ROAS']         || r['H'] || 0),
+    cac:       numMeta(r['CAC']          || r['I'] || 0),
   };
 }
 
