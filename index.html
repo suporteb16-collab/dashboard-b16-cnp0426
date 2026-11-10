@@ -2382,9 +2382,21 @@ function cfgLanc(id) { return LANCAMENTOS[id || LANCAMENTO_ATIVO] || LANCAMENTOS
 // Janela de datas usada para filtrar vendas (Kiwify) na aba Vendas.
 // CNP1 (0426) mantém a janela histórica fixa do carrinho daquele lançamento.
 // Qualquer outro lançamento usa: início da captação → hoje (dinâmico).
-function vendaWindow() {
-  if (LANCAMENTO_ATIVO === '0426') return { d1: '2026-05-11', d2: '2026-05-31' };
-  return { d1: cfgLanc().dataIni, d2: new Date().toISOString().slice(0,10) };
+//
+// Esta é a janela PADRÃO do lançamento. O seletor de período do topo tem
+// precedência: vendaWindow(f) recebe o filtro e devolve o recorte escolhido,
+// limitado à janela do lançamento para não vazar venda de outro CNP.
+// Sem isso o card de vendas ignorava as datas enquanto Meta, Google e
+// Elementor as respeitavam — o período mudava e só as vendas ficavam paradas.
+function vendaWindow(f) {
+  var base = (LANCAMENTO_ATIVO === '0426')
+    ? { d1: '2026-05-11', d2: '2026-05-31' }
+    : { d1: cfgLanc().dataIni, d2: new Date().toISOString().slice(0,10) };
+  if (!f || !f.d1 || !f.d2) return base;
+  return {
+    d1: f.d1 > base.d1 ? f.d1 : base.d1,
+    d2: f.d2 < base.d2 ? f.d2 : base.d2
+  };
 }
 
 const SHEET_META   = 'Dados Meta Ads';
@@ -2799,7 +2811,6 @@ const ORIGEM_CORES = {
 
 function processKiwify(rows, d1, d2) {
   var DATA_INI = KIWIFY_DATA_INI;
-  var JANELA_LANC = vendaWindow();
   var vendas=0, fat=0, reembolsos=0, fatReemb=0, aguardando=0;
   // bumpRefs evita contar duas vezes o mesmo order bump quando o webhook da Kiwify
   // reentrega o evento e a Página1 grava a linha repetida (visto em 10-11/08/2026).
@@ -3360,7 +3371,8 @@ function applyFilters() {
   // (ex: CNP2/0726), usa a janela dinâmica do início da captação até hoje —
   // antes disso ficava travado nas datas do CNP1 e nenhuma venda do lançamento
   // ativo aparecia, mesmo existindo na planilha.
-  var vw = vendaWindow();
+  var vw = vendaWindow(f);
+  window._vendaWindow = vw;   // janela efetiva, lida pelo banner de diagnóstico
   var kiwify = processKiwify(cachedKiwify, vw.d1, vw.d2);
   window._dbKiwify = kiwify;
   var metas  = processMetas(cachedMetas);
@@ -3455,7 +3467,9 @@ function barHoriz(container, data, maxVal, corFn) {
 
 // Mostra um aviso na aba Vendas quando a planilha Kiwify carregou mas nenhuma
 // linha bateu com o produto/status esperado — evita "0 vendas" silencioso.
-function renderVendasDiagBanner(k) {
+// `vw` é a janela realmente aplicada (lançamento ∩ seletor de período), para o
+// banner citar o recorte que o usuário está vendo, e não o do lançamento todo.
+function renderVendasDiagBanner(k, vw) {
   var el = document.getElementById('vendasDiagBanner');
   if (!el) return;
   var dbg = window._kiwifyDebug;
@@ -3471,7 +3485,7 @@ function renderVendasDiagBanner(k) {
       + 'Ajuste a constante <code>PRODUTO_EXATO</code> no código para bater com o nome real do produto na Kiwify.';
     el.style.display = 'block';
   } else {
-    var vw = vendaWindow();
+    vw = vw || vendaWindow();
     var statusProd = Object.keys(dbg.produtoAlvoStatusEncontrados || {});
     if (dbg.produtoAlvoPaidDataMin) {
       // Existem vendas "paid" do produto, só que fora da janela de datas aplicada na aba Vendas.
@@ -3576,7 +3590,7 @@ function aplicaProdutoGeral() {
 
 function renderVendas(kiwify, metas, wp, rmktSpendDireto, totalAdsDireto, abandonoRows) {
   var k = kiwify;
-  renderVendasDiagBanner(k);
+  renderVendasDiagBanner(k, window._vendaWindow);
   // Usar valor passado diretamente (evita problema de ordem de execução)
   var rmktSpend = rmktSpendDireto || 0;
   // Fallback: tentar pegar do DOM se não foi passado
